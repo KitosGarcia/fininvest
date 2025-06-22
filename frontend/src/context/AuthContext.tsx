@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { authService } from "../services/api";
+import axios from "axios";
 
 interface User {
   user_id: number;
@@ -12,7 +13,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (username: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -31,6 +32,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
         setToken(storedToken);
+        axios.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`; // 🔧 restaura headers
       } catch (error) {
         console.warn("Erro ao recuperar utilizador do localStorage:", error);
         localStorage.removeItem("user_data");
@@ -38,18 +40,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const login = async (username: string, password: string) => {
-    const res = await authService.login(username, password);
-    localStorage.setItem("auth_token", res.token);
-    localStorage.setItem("user_data", JSON.stringify(res.user));
-    setUser(res.user);
-    setToken(res.token);
-  };
+const login = async (username: string, password: string) => {
+  try {
+    const res = await axios.post("/auth/login", { username, password });
+    const { token, user } = res.data;
+
+    localStorage.setItem("token", token);
+    localStorage.setItem("user_data", JSON.stringify(user)); // garante que o user está salvo
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+    setUser(user); // atualiza o contexto
+    return true;
+  } catch (err) {
+    console.error("Erro ao fazer login:", err);
+    return false; // <== ✅ Isto precisa estar aqui para funcionar com o if(success)
+  }
+};
 
   const logout = () => {
     authService.logout();
     setUser(null);
     setToken(null);
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("user_data");
   };
 
   return (
