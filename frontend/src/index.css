@@ -13,3 +13,43 @@ body,
   height: 100%;
   overflow: hidden;
 }
+
+@media print {
+  body {
+    margin: 0;
+    padding: 0;
+    background: white !important;
+    color: black !important;
+    font-family: "Arial", sans-serif;
+    font-size: 12pt;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  #printable-client,
+  #printable-client * {
+    visibility: visible;
+  }
+
+  #printable-client {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 2cm;
+  }
+
+  button,
+  .print:hidden {
+    display: none !important;
+  }
+
+  .print-title {
+    text-align: center;
+    font-size: 18pt;
+    font-weight: bold;
+    margin-bottom: 2rem;
+  }
+}
