@@ -10,6 +10,16 @@ import CompanyPage        from "./pages/settings/CompanyPage";
 import CurrencyPage       from "./pages/settings/CurrencyPage";
 import BankAccountPage    from "./pages/settings/BankAccountPage";
 import UsersPage          from "./pages/settings/UsersPage";
+import MembersPage        from "./components/members/MembersPage";
+import ClientsPage        from "./components/clients/ClientsPage";
+import LoansPage          from "./components/loans/LoansPage";
+import ContributionsPage  from "./components/contributions/ContributionsPage";
+import PaymentsPage       from "./components/payments/PaymentsPage";
+import LedgerPage         from "./components/ledger/LedgerPage";
+import TransfersPage      from "./components/transfers/TransfersPage";
+
+
+
 
 export default function App() {
   return (
@@ -34,6 +44,15 @@ export default function App() {
           <Route path="settings/currency"   element={<CurrencyPage />} />
           <Route path="settings/bank-accounts" element={<BankAccountPage />} />
           <Route path="settings/users"      element={<UsersPage />} />
+
+          <Route path="/members"       element={<PrivateRoute><MembersPage /></PrivateRoute>} />
+          <Route path="/clients"       element={<PrivateRoute><ClientsPage /></PrivateRoute>} />
+          <Route path="/loans"         element={<PrivateRoute><LoansPage /></PrivateRoute>} />
+          <Route path="/contributions" element={<PrivateRoute><ContributionsPage /></PrivateRoute>} />
+          <Route path="/payments"      element={<PrivateRoute><PaymentsPage /></PrivateRoute>} />
+          <Route path="/ledger"        element={<PrivateRoute><LedgerPage /></PrivateRoute>} />
+          <Route path="/transfers"     element={<PrivateRoute><TransfersPage /></PrivateRoute>} />
+
         </Route>
 
         {/* fallback */}
