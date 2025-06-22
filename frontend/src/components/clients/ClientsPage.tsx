@@ -16,7 +16,7 @@ interface Client {
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [mode, setMode] = useState<"create" | "edit">("create");
+  const [mode, setMode] = useState<"create" | "update">("create");
   const [selected, setSelected] = useState<Client | null>(null);
 
   const load = async () => {
@@ -37,7 +37,7 @@ export default function ClientsPage() {
   };
 
   const openEdit = (c: Client) => {
-    setMode("edit");
+    setMode("update");
     setSelected(c);
     setModalOpen(true);
   };

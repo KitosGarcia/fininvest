@@ -1,45 +1,52 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
-/* --- Autenticação com JWT e carregamento de permissões --- */
-const authenticateToken = async (req, res, next) => {
+/* --- Autenticação com JWT --- */
+const authenticateToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1]; // formato: Bearer TOKEN
+  const token = authHeader && authHeader.split(" ")[1];
 
   if (!token) {
     return res.status(401).json({ message: "Authentication token required." });
   }
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // 🔁 Buscar permissões do role associado
-    const permissions = await getPermissionsForRole(decoded.role_id);
+  jwt.verify(token, process.env.JWT_SECRET, (err, payload) => {
+    if (err) {
+      return res.status(403).json({ message: "Invalid or expired token." });
+    }
 
     req.user = {
-      ...decoded,       // user_id, username, role_id
-      permissions       // ← agora o backend tem acesso às permissões
+      user_id: payload.user_id,
+      username: payload.username,
+      role_id: payload.role_id,
+      permissions: payload.permissions  // 🔥 Importante!
     };
 
     next();
-  } catch (err) {
-    console.error("JWT Verification Error:", err.message);
-    const message = err.name === 'TokenExpiredError'
-      ? "Token expired."
-      : "Invalid or expired token.";
-    return res.status(403).json({ message });
-  }
+  });
 };
 
-/* --- Autorização por role_id (ex: 1 = admin) --- */
+/* --- Autorização por Role ID --- */
 function authorizeRole(requiredRoleId) {
   return (req, res, next) => {
-    if (!req.user) {
-      return res.status(403).json({ message: "Acesso negado: usuário não autenticado." });
+    if (!req.user || req.user.role_id !== requiredRoleId) {
+      return res.status(403).json({ message: "Acesso negado: perfil insuficiente." });
+    }
+    next();
+  };
+}
+
+/* --- Autorização baseada em permissões CRUD --- */
+function authorizePermission(module, action) {
+  return (req, res, next) => {
+    const user = req.user;
+    if (!user || !user.permissions) {
+      return res.status(403).json({ message: "Permissões não encontradas." });
     }
 
-    if (req.user.role_id !== requiredRoleId) {
-      return res.status(403).json({ message: "Acesso negado: perfil insuficiente." });
+    const perm = user.permissions.find(p => p.module === module);
+    if (!perm || !perm[`can_${action}`]) {
+      return res.status(403).json({ message: "Permissão insuficiente." });
     }
 
     next();
@@ -48,5 +55,6 @@ function authorizeRole(requiredRoleId) {
 
 module.exports = {
   authenticateToken,
-  authorizeRole
+  authorizeRole,
+  authorizePermission
 };

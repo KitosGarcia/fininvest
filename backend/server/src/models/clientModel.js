@@ -37,49 +37,146 @@ const Client = {
     }
   },
 
-  // Create a new client
-  create: async ({ member_id, name, document_id, contact_info, client_type, risk_profile, credit_rating, documents }) => {
-    const query = `
-      INSERT INTO clients (member_id, name, document_id, contact_info, client_type, risk_profile, credit_rating, documents)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      RETURNING *;
-    `;
-    // Ensure member_id is null if not provided or empty
-    const finalMemberId = member_id ? parseInt(member_id, 10) : null;
-    const values = [finalMemberId, name, document_id, contact_info, client_type, risk_profile, credit_rating, documents];
-    try {
-      const { rows } = await db.query(query, values);
-      return rows[0];
-    } catch (error) {
-      console.error("Error creating client:", error);
-      if (error.code === '23505') { // Unique violation (e.g., document_id, member_id if unique)
-          throw new Error('Client with this document ID or linked member ID already exists.');
-      }
-      throw error;
-    }
-  },
+// ======================= CREATE =======================
+create: async ({
+  member_id,
+  name,
+  document_id,
+  email,
+  phone,
+  address,
+  client_type,
+  birth_date,
+  gender,
+  nationality,
+  marital_status,
+  occupation,
+  income_range,
+  pep_flag,
+  status,
+  risk_profile,
+  credit_rating,
+  documents
+}) => {
+  const query = `
+    INSERT INTO clients (
+      member_id, name, document_id, email, phone, address,
+      client_type, birth_date, gender, nationality, marital_status,
+      occupation, income_range, pep_flag, status,
+      risk_profile, credit_rating, documents
+    )
+    VALUES (
+      $1, $2, $3, $4, $5, $6,
+      $7, $8, $9, $10, $11,
+      $12, $13, $14, $15,
+      $16, $17, $18
+    )
+    RETURNING *;
+  `;
 
-  // Update an existing client
-  update: async (id, { member_id, name, document_id, contact_info, client_type, risk_profile, credit_rating, documents }) => {
-    const query = `
-      UPDATE clients
-      SET member_id = $1, name = $2, document_id = $3, contact_info = $4, client_type = $5, risk_profile = $6, credit_rating = $7, documents = $8, updated_at = CURRENT_TIMESTAMP
-      WHERE client_id = $9
-      RETURNING *;
-    `;
-    const finalMemberId = member_id ? parseInt(member_id, 10) : null;
-    const values = [finalMemberId, name, document_id, contact_info, client_type, risk_profile, credit_rating, documents, id];
-    try {
-      const { rows } = await db.query(query, values);
-      return rows[0];
-    } catch (error) {
-      console.error(`Error updating client with ID ${id}:`, error);
-       if (error.code === '23505') { 
-          throw new Error('Another client with this document ID or linked member ID already exists.');
-      }
-      throw error;
-    }
-  },
+  const finalMemberId = member_id ? parseInt(member_id, 10) : null;
+  const values = [
+    finalMemberId,             // $1
+    name,                      // $2
+    document_id,               // $3
+    email,                     // $4
+    phone,                     // $5
+    address,                   // $6
+    client_type,               // $7
+    birth_date || null,        // $8   (DATE)
+    gender,                    // $9
+    nationality,               // $10
+    marital_status,            // $11
+    occupation,                // $12
+    income_range,              // $13
+    pep_flag ?? false,         // $14  (BOOLEAN)
+    status || 'ativo',         // $15
+    risk_profile,              // $16
+    credit_rating,             // $17
+    documents || null          // $18  (JSONB ou TEXT)
+  ];
+
+  const { rows } = await db.query(query, values);
+  return rows[0];
+},
+
+// ======================= UPDATE =======================
+update: async (
+  id,
+  {
+    member_id,
+    name,
+    document_id,
+    email,
+    phone,
+    address,
+    client_type,
+    birth_date,
+    gender,
+    nationality,
+    marital_status,
+    occupation,
+    income_range,
+    pep_flag,
+    status,
+    risk_profile,
+    credit_rating,
+    documents
+  }
+) => {
+  const query = `
+    UPDATE clients SET
+      member_id       = $1,
+      name            = $2,
+      document_id     = $3,
+      email           = $4,
+      phone           = $5,
+      address         = $6,
+      client_type     = $7,
+      birth_date      = $8,
+      gender          = $9,
+      nationality     = $10,
+      marital_status  = $11,
+      occupation      = $12,
+      income_range    = $13,
+      pep_flag        = $14,
+      status          = $15,
+      risk_profile    = $16,
+      credit_rating   = $17,
+      documents       = $18,
+      updated_at      = CURRENT_TIMESTAMP
+    WHERE client_id = $19
+    RETURNING *;
+  `;
+
+  const finalMemberId = member_id ? parseInt(member_id, 10) : null;
+  const values = [
+    finalMemberId,             // $1
+    name,                      // $2
+    document_id,               // $3
+    email,                     // $4
+    phone,                     // $5
+    address,                   // $6
+    client_type,               // $7
+    birth_date || null,        // $8
+    gender,                    // $9
+    nationality,               // $10
+    marital_status,            // $11
+    occupation,                // $12
+    income_range,              // $13
+    pep_flag ?? false,         // $14
+    status,                    // $15
+    risk_profile,              // $16
+    credit_rating,             // $17
+    documents || null,         // $18
+    id                         // $19
+  ];
+
+  const { rows } = await db.query(query, values);
+  return rows[0];
+},
+
+
 
   // Delete a client (Consider implications, maybe prevent deletion if active loans exist)
   delete: async (id) => {
