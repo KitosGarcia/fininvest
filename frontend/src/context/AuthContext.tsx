@@ -6,7 +6,7 @@ interface Permission {
   module: string;
   can_view: boolean;
   can_create: boolean;
-  can_edit: boolean;
+  can_update: boolean;
   can_delete: boolean;
 }
 
@@ -24,7 +24,7 @@ interface AuthContextType {
   token: string | null;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
-  hasPermission: (module: string, action: "view" | "create" | "edit" | "delete") => boolean;
+  hasPermission: (module: string, action: "view" | "create" | "update" | "delete") => boolean;
 }
 
 
@@ -73,7 +73,7 @@ const login = async (username: string, password: string) => {
 
 const hasPermission = (
   module: string,
-  action: "view" | "create" | "edit" | "delete"
+  action: "view" | "create" | "update" | "delete"
 ): boolean => {
   if (!user?.permissions) return false;
   const perm = user.permissions.find(p => p.module === module);

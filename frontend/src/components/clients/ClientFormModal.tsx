@@ -1,4 +1,3 @@
-// src/components/clients/ClientFormModal.tsx
 import { useEffect, useState } from "react";
 import {
   Dialog,
@@ -49,7 +48,6 @@ export default function ClientFormModal({
   const [form, setForm] = useState(blank);
   const [loading, setLoading] = useState(false);
 
-  // reseta sempre que o modal abre
   useEffect(() => {
     if (!isOpen) return;
     setForm(isEdit && initialData ? { ...blank, ...initialData } : blank);
@@ -59,17 +57,24 @@ export default function ClientFormModal({
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value, type, checked } = e.target;
-    setForm((p) => ({ ...p, [name]: type === "checkbox" ? checked : value }));
+    setForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
+      const contact_info = [form.email, form.phone].filter(Boolean).join(" / ");
+      const payload = {
+        ...form,
+        contact_info,
+      };
+
+
       if (isEdit) {
-        await clientService.update(initialData.client_id, form);
+        await clientService.update(initialData.client_id, payload);
       } else {
-        await clientService.create(form);
+        await clientService.create(payload);
       }
       onSuccess();
       onClose();
@@ -90,7 +95,7 @@ export default function ClientFormModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          {/* LINHA 1 ------------------------------------------------- */}
+          {/* LINHA 1 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>Nome</Label>
@@ -102,7 +107,6 @@ export default function ClientFormModal({
                 className="bg-blue-900 border-blue-700"
               />
             </div>
-
             <div>
               <Label>NIF / Doc. Ident.</Label>
               <Input
@@ -115,7 +119,7 @@ export default function ClientFormModal({
             </div>
           </div>
 
-          {/* LINHA 2 ------------------------------------------------- */}
+          {/* LINHA 2 */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label>E-mail</Label>
@@ -149,7 +153,7 @@ export default function ClientFormModal({
             </div>
           </div>
 
-          {/* LINHA 3 ------------------------------------------------- */}
+          {/* LINHA 3 */}
           <div>
             <Label>Morada</Label>
             <Input
@@ -160,7 +164,7 @@ export default function ClientFormModal({
             />
           </div>
 
-          {/* LINHA 4 ------------------------------------------------- */}
+          {/* LINHA 4 */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <Label>Data Nasc.</Label>
@@ -206,7 +210,7 @@ export default function ClientFormModal({
             </div>
           </div>
 
-          {/* LINHA 5 ------------------------------------------------- */}
+          {/* LINHA 5 */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label>Profissão</Label>
@@ -238,6 +242,7 @@ export default function ClientFormModal({
             </div>
           </div>
 
+          {/* BOTÕES */}
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancelar
