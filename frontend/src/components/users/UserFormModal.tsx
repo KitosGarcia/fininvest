@@ -15,43 +15,45 @@ interface UserFormModalProps {
 
 export function UserFormModal({ isOpen, onClose, onSubmit, mode, initialData }: UserFormModalProps) {
   const [formData, setFormData] = useState({
-    member_id: initialData?.member_id || "",
-    username: initialData?.username || "",
+    member_id: "",
+    username: "",
     password: "",
-    role_id: initialData?.role_id || "",
-    two_factor_enabled: initialData?.two_factor_enabled || false,
+    role_id: "",
+    two_factor_enabled: false,
   });
 
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const isEdit = mode === "edit";
 
   useEffect(() => {
     userService.getRoles().then(setRoles).catch(console.error);
   }, []);
 
-useEffect(() => {
-  if (isOpen) {
-    if (isEdit && initialData) {
-      setFormData({
-        member_id: initialData.member_id || "",
-        username: initialData.username || "",
-        password: "",
-        role_id: initialData.role_id || "",
-        two_factor_enabled: initialData.two_factor_enabled || false,
-      });
-    } else {
-      // Resetar quando for novo utilizador
-      setFormData({
-        member_id: "",
-        username: "",
-        password: "",
-        role_id: "",
-        two_factor_enabled: false,
-      });
+  useEffect(() => {
+    if (isOpen) {
+      if (isEdit && initialData) {
+        setFormData({
+          member_id: initialData.member_id || "",
+          username: initialData.username || "",
+          password: "",
+          role_id: initialData.role_id || "",
+          two_factor_enabled: initialData.two_factor_enabled || false,
+        });
+      } else {
+        // Resetar quando for novo utilizador
+        setFormData({
+          member_id: "",
+          username: "",
+          password: "",
+          role_id: "",
+          two_factor_enabled: false,
+        });
+      }
+      setErrorMessage(""); // limpa erro quando abre
     }
-  }
-}, [isOpen, isEdit, initialData]);
+  }, [isOpen, isEdit, initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type, checked } = e.target;
@@ -64,6 +66,8 @@ useEffect(() => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMessage("");
+
     try {
       if (isEdit) {
         await userService.update(initialData.user_id, formData);
@@ -72,8 +76,13 @@ useEffect(() => {
       }
       onSubmit();
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro ao guardar utilizador:", error);
+      if (error.response?.status === 409) {
+        setErrorMessage("Já existe um utilizador com este username.");
+      } else {
+        setErrorMessage("Ocorreu um erro ao criar/editar o utilizador.");
+      }
     } finally {
       setLoading(false);
     }
@@ -88,7 +97,7 @@ useEffect(() => {
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4" autoComplete="off">
           <div className="space-y-1">
             <Label className="text-blue-200">Username</Label>
             <Input
@@ -96,6 +105,7 @@ useEffect(() => {
               value={formData.username}
               onChange={handleChange}
               required
+              autoComplete="off"
               className="bg-blue-900 border-blue-700 text-white"
             />
           </div>
@@ -109,6 +119,7 @@ useEffect(() => {
                 value={formData.password}
                 onChange={handleChange}
                 required
+                autoComplete="new-password"
                 className="bg-blue-900 border-blue-700 text-white"
               />
             </div>
@@ -152,6 +163,12 @@ useEffect(() => {
             />
             <Label className="text-blue-200">Ativar 2FA</Label>
           </div>
+
+          {errorMessage && (
+            <div className="text-red-400 text-sm bg-red-900 border border-red-800 rounded p-2">
+              {errorMessage}
+            </div>
+          )}
 
           <div className="flex justify-end gap-2 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
