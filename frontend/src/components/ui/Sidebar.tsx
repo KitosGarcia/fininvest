@@ -50,7 +50,7 @@ export function Sidebar() {
   return (
     <aside className="w-64 bg-blue-950 text-blue-100 h-full flex flex-col shadow-lg">
       {/* --------------- LOGO --------------- */}
-      <div className="p-4 text-xl font-bold tracking-wide border-b border-blue-800">
+      <div className="p-4 text-xl tracking-wide border-b border-blue-800">
         FININVEST
       </div>
 

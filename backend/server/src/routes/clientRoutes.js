@@ -50,7 +50,7 @@ router.post("/", authorizePermission("clients", "create"), async (req, res) => {
   const created_by_user_id = req.user.user_id;
   const ip_address = req.ip;
 
-  if (!clientData.name || !clientData.document_id || !clientData.contact_info || !clientData.client_type) {
+  if (!clientData.name || !clientData.document_id || !clientData.client_type) {
     return res.status(400).json({ message: "Name, document ID, contact info, and client type are required." });
   }
   if (!["internal", "external"].includes(clientData.client_type)) {

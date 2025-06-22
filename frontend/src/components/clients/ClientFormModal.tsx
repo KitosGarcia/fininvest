@@ -43,6 +43,10 @@ export default function ClientFormModal({
     income_range: "",
     pep_flag: false,
     status: "ativo",
+    documents: "",
+    risk_profile: "",
+    credit_rating: "",
+
   };
 
   const [form, setForm] = useState(blank);
@@ -50,48 +54,77 @@ export default function ClientFormModal({
 
   useEffect(() => {
     if (!isOpen) return;
-    setForm(isEdit && initialData ? { ...blank, ...initialData } : blank);
+    if (isEdit && initialData) {
+      const safeData = Object.fromEntries(
+        Object.entries({ ...blank, ...initialData }).map(([k, v]) => [
+          k,
+          v ?? (typeof blank[k as keyof typeof blank] === "boolean" ? false : ""),
+        ])
+      );
+      setForm(safeData);
+    } else {
+      setForm(blank);
+    }
   }, [isOpen, isEdit, initialData]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value, type, checked } = e.target;
-    setForm((prev) => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value ?? "",
+    }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const contact_info = [form.email, form.phone].filter(Boolean).join(" / ");
-      const payload = {
-        ...form,
-        contact_info,
-      };
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  try {
+const payload = Object.fromEntries(
+  Object.entries({
+    ...form,
+    pep_flag: !!form.pep_flag,
+    status: form.status || "ativo",
+    client_type: form.client_type || "internal",
+  }).filter(([_, v]) => v !== "")
+);
 
 
-      if (isEdit) {
-        await clientService.update(initialData.client_id, payload);
-      } else {
-        await clientService.create(payload);
-      }
-      onSuccess();
-      onClose();
-    } catch (err: any) {
-      alert(err?.response?.data?.message || "Erro ao gravar cliente");
-    } finally {
-      setLoading(false);
+    console.log("Submitting payload:", payload);
+
+    if (!payload.name || !payload.document_id) {
+      alert("Nome e Documento são obrigatórios.");
+      return;
     }
-  };
+
+    if (isEdit) {
+      await clientService.update(initialData.client_id, payload);
+    } else {
+      await clientService.create(payload);
+    }
+
+    onSuccess();
+    onClose();
+  } catch (err: any) {
+    alert(err?.response?.data?.message || "Erro ao gravar cliente");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-blue-950 text-blue-100 max-w-2xl border border-blue-800 overflow-y-auto max-h-[90vh]">
+      <DialogContent
+        aria-describedby="client-form-description"
+        className="bg-blue-950 text-blue-100 max-w-2xl border border-blue-800 overflow-y-auto max-h-[90vh]"
+      >
         <DialogHeader>
-          <DialogTitle>
-            {isEdit ? "Editar Cliente" : "Novo Cliente"}
-          </DialogTitle>
+          <DialogTitle>{isEdit ? "Editar Cliente" : "Novo Cliente"}</DialogTitle>
+          <p id="client-form-description" className="sr-only">
+            Formulário para criação ou edição de cliente.
+          </p>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
