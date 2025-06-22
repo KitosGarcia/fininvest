@@ -4,6 +4,8 @@ const bcrypt  = require("bcryptjs");
 const User    = require("../models/userModel");
 const AuditLogService = require("../services/auditLogService");
 require("dotenv").config();
+const { getPermissionsForRole } = require("../utils/permissions");
+
 
 const router = express.Router();
 
@@ -97,8 +99,15 @@ const token = jwt.sign(
       ip_address,
     });
 
-    const { password_hash, ...safeUser } = user;
-    res.json({ message: "Login successful", token, user: safeUser });
+const permissions = await getPermissionsForRole(user.role_id);
+const { password_hash, ...safeUser } = user;
+
+res.json({
+  message: "Login successful",
+  token,
+  user: safeUser,
+  permissions, // ← agora enviamos isto ao front
+});
   } catch (error) {
     console.error("Login error:", error);
     AuditLogService.logAction({

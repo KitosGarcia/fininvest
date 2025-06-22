@@ -207,6 +207,17 @@ CREATE TABLE notifications (
     FOREIGN KEY (member_id) REFERENCES members(member_id) ON DELETE CASCADE
 );
 
+--Tabela de Permissoes
+CREATE TABLE permissions (
+  permission_id SERIAL PRIMARY KEY,
+  role_id INTEGER REFERENCES roles(role_id),
+  module VARCHAR(50),
+  can_view BOOLEAN DEFAULT FALSE,
+  can_create BOOLEAN DEFAULT FALSE,
+  can_update BOOLEAN DEFAULT FALSE,
+  can_delete BOOLEAN DEFAULT FALSE
+);
+
 -- Currencies Table
 CREATE TABLE currencies (
     currency_id SERIAL PRIMARY KEY,
@@ -235,6 +246,10 @@ CREATE TABLE company_profile (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
+
+
+
+
 
 
 
@@ -313,4 +328,65 @@ INSERT INTO currencies (code, name, symbol, is_primary) VALUES
   ('EUR', 'Euro',      '€', FALSE)     ON CONFLICT (code) DO NOTHING,
   ('USD', 'US Dollar', '$', FALSE)    ON CONFLICT (code) DO NOTHING,
   ('AOA', 'Kwanza',    'Kz', TRUE)   ON CONFLICT (code) DO NOTHING;
+  
+  
+  
+  /* ---------- LISTA DE MÓDULOS QUE EXISTEM HOJE ---------- */
+-- dashboard não precisa, é sempre visível depois do login.
+-- settings/* herdará das entradas abaixo (company, currency…)
+-- Podes adicionar módulos extra seguindo o mesmo padrão.
+
+-- Modules operacionais
+--  members, clients, loans, contributions, payments, ledger, transfers
+-- Módulos de configuração
+--  company, currency, bank-accounts, users, roles, security, documents, notifications, logs
+
+
+/* ---------- PERMISSÕES PARA ADMIN (role_id = 1) ---------- */
+INSERT INTO permissions (role_id, module, can_view, can_create, can_update, can_delete)
+VALUES
+  /* Módulos operacionais */
+  (1,'members',        TRUE,TRUE,TRUE,TRUE),
+  (1,'clients',        TRUE,TRUE,TRUE,TRUE),
+  (1,'loans',          TRUE,TRUE,TRUE,TRUE),
+  (1,'contributions',  TRUE,TRUE,TRUE,TRUE),
+  (1,'payments',       TRUE,TRUE,TRUE,TRUE),
+  (1,'ledger',         TRUE,TRUE,TRUE,TRUE),
+  (1,'transfers',      TRUE,TRUE,TRUE,TRUE),
+
+  /* Configuração / administração */
+  (1,'company',        TRUE,TRUE,TRUE,TRUE),
+  (1,'currency',       TRUE,TRUE,TRUE,TRUE),
+  (1,'bank-accounts',  TRUE,TRUE,TRUE,TRUE),
+  (1,'users',          TRUE,TRUE,TRUE,TRUE),
+  (1,'roles',          TRUE,TRUE,TRUE,TRUE),
+  (1,'security',       TRUE,TRUE,TRUE,TRUE),
+  (1,'documents',      TRUE,TRUE,TRUE,TRUE),
+  (1,'notifications',  TRUE,TRUE,TRUE,TRUE),
+  (1,'logs',           TRUE,FALSE,FALSE,FALSE);  -- logs não se apagam, apenas leitura
+
+
+/* ---------- PERMISSÕES PARA USER PADRÃO (role_id = 2) ---------- */
+INSERT INTO permissions (role_id, module, can_view, can_create, can_update, can_delete)
+VALUES
+  /* Operacionais – apenas leitura */
+  (2,'members',        TRUE,FALSE,FALSE,FALSE),
+  (2,'clients',        TRUE,FALSE,FALSE,FALSE),
+  (2,'loans',          TRUE,FALSE,FALSE,FALSE),
+  (2,'contributions',  TRUE,FALSE,FALSE,FALSE),
+  (2,'payments',       TRUE,FALSE,FALSE,FALSE),
+  (2,'ledger',         TRUE,FALSE,FALSE,FALSE),
+  (2,'transfers',      TRUE,FALSE,FALSE,FALSE),
+
+  /* Configuração – sem acesso */
+  (2,'company',        FALSE,FALSE,FALSE,FALSE),
+  (2,'currency',       FALSE,FALSE,FALSE,FALSE),
+  (2,'bank-accounts',  FALSE,FALSE,FALSE,FALSE),
+  (2,'users',          FALSE,FALSE,FALSE,FALSE),
+  (2,'roles',          FALSE,FALSE,FALSE,FALSE),
+  (2,'security',       FALSE,FALSE,FALSE,FALSE),
+  (2,'documents',      FALSE,FALSE,FALSE,FALSE),
+  (2,'notifications',  FALSE,FALSE,FALSE,FALSE),
+  (2,'logs',           FALSE,FALSE,FALSE,FALSE);
+
 
