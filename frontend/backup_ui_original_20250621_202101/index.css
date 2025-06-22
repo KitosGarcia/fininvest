@@ -1,0 +1,120 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root {
+  height: 100%;
+}
+/* Importação de fontes */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    --radius: 0.5rem;
+    
+    /* Cores base */
+    --background: 220 70% 5%;
+    --foreground: 0 0% 98%;
+    
+    /* Cores primárias */
+    --primary: 160 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    
+    /* Cores secundárias */
+    --secondary: 210 100% 50%;
+    --secondary-foreground: 0 0% 100%;
+    
+    /* Cores de acento */
+    --accent: 45 100% 60%;
+    --accent-foreground: 0 0% 0%;
+    
+    /* Cores de cartões e elementos */
+    --card: 220 70% 8%;
+    --card-foreground: 0 0% 98%;
+    
+    /* Cores de elementos de UI */
+    --popover: 220 70% 7%;
+    --popover-foreground: 0 0% 98%;
+    
+    /* Cores de botões */
+    --muted: 220 30% 20%;
+    --muted-foreground: 0 0% 80%;
+    
+    /* Cores de destaque */
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 100%;
+    
+    /* Cores de bordas e separadores */
+    --border: 220 30% 20%;
+    --input: 220 30% 20%;
+    --ring: 160 100% 50%;
+    
+    /* Sidebar específica */
+    --sidebar-background: 220 70% 5%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 160 100% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 30% 15%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 220 30% 20%;
+    --sidebar-ring: 160 100% 50%;
+  }
+}
+
+/* Configurações globais */
+body {
+  font-family: 'Inter', 'Open Sans', sans-serif;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Orbitron', 'Montserrat', sans-serif;
+  font-weight: 700;
+}
+
+/* Efeitos de glassmorphism */
+.glass {
+  background: rgba(20, 30, 48, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Efeitos de brilho para elementos importantes */
+.glow {
+  box-shadow: 0 0 15px hsl(var(--primary) / 0.5);
+}
+
+/* Animações e transições */
+.transition-all {
+  transition: all 0.3s ease;
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary));
+}
+
+/* --- Fim do ficheiro --- */
+.bg-login{
+  background: radial-gradient(circle at 25% 25%, #06264a 0%, #04172c 100%);
+}

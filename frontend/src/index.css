@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.bg-login {
+  background: radial-gradient(circle at 25% 25%, #06264a 0%, #04172c 100%);
+}
+
+
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
