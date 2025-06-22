@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { authService } from "../services/api";
+import api, { authService } from "../services/api";
 import axios from "axios";
 
 interface User {
@@ -42,21 +42,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 const login = async (username: string, password: string) => {
   try {
-    const res = await axios.post("/auth/login", { username, password });
-    const { token, user } = res.data;
+    const { token, user } = await authService.login(username, password);
 
-    localStorage.setItem("token", token);
-    localStorage.setItem("user_data", JSON.stringify(user)); // garante que o user está salvo
-    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    localStorage.setItem("auth_token", token);
+    localStorage.setItem("user_data", JSON.stringify(user));
+    api.defaults.headers.common.Authorization = `Bearer ${token}`;
 
-    setUser(user); // atualiza o contexto
+    setUser(user);
+    setToken(token);
     return true;
   } catch (err) {
     console.error("Erro ao fazer login:", err);
-    return false; // <== ✅ Isto precisa estar aqui para funcionar com o if(success)
+    return false;
   }
 };
-
   const logout = () => {
     authService.logout();
     setUser(null);
