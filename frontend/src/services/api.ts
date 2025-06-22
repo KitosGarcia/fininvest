@@ -1,15 +1,14 @@
+// src/services/api.ts
 import axios from "axios";
 
-// Define URL base da API (ex: http://localhost:5000 ou do .env)
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+//  Acrescenta /api ao URL por defeito
+const API_URL =
+  import.meta.env.VITE_API_URL        // ex.: http://localhost:5000/api  (ficheiro .env)
+  || "http://localhost:5000/api";     // fallback local
 
-// Cria uma instância única do axios
 const api = axios.create({
   baseURL: API_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-  withCredentials: false,
+  headers: { "Content-Type": "application/json" },
 });
 
 // Intercepta todas as requisições para incluir o token JWT
@@ -36,6 +35,8 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+export default api;                // instancia única
 
 
 // -----------------------------
@@ -605,6 +606,4 @@ export const auditLogService = {
     }
   },
 };
-
-export default api;
 
