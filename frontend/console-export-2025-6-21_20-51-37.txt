@@ -1,0 +1,8 @@
+GET
+http://localhost:5173/src/App.tsx
+NS_ERROR_CORRUPTED_CONTENT
+
+[vite] connecting... client:789:9
+O carregamento de módulo de “http://localhost:5173/src/App.tsx” foi bloqueado por causa de um tipo MIME não permitido (“”). socios
+O carregamento falhou para o módulo com fonte “http://localhost:5173/src/App.tsx”. main.tsx
+[vite] connected. client:912:15

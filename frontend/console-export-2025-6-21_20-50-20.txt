@@ -1,0 +1,11 @@
+GET
+http://localhost:5173/src/App.tsx
+NS_ERROR_CORRUPTED_CONTENT
+
+O carregamento de módulo de “http://localhost:5173/src/App.tsx” foi bloqueado por causa de um tipo MIME não permitido (“”). socios
+O carregamento falhou para o módulo com fonte “http://localhost:5173/src/App.tsx”. main.tsx
+O carregamento falhou para o módulo com fonte “http://localhost:5173/src/index.css”. socios
+O carregamento falhou para o módulo com fonte “http://localhost:5173/node_modules/.vite/deps/chunk-VJYZWRTN.js?v=e33bfe65”. socios
+O carregamento falhou para o módulo com fonte “http://localhost:5173/node_modules/.vite/deps/chunk-MLKVGRKF.js?v=e33bfe65”. socios
+[vite] connecting... client:789:9
+[vite] connected. client:912:15
