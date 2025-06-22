@@ -58,7 +58,7 @@ const login = async (username: string, password: string) => {
 
     user.permissions = permissions; 
 
-    localStorage.setItem("token", token);
+    localStorage.setItem("auth_token", token);
     localStorage.setItem("user_data", JSON.stringify(user));
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 

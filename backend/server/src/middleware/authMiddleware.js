@@ -1,8 +1,8 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
-/* --- Autenticação com JWT --- */
-const authenticateToken = (req, res, next) => {
+/* --- Autenticação com JWT e carregamento de permissões --- */
+const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1]; // formato: Bearer TOKEN
 
@@ -10,18 +10,25 @@ const authenticateToken = (req, res, next) => {
     return res.status(401).json({ message: "Authentication token required." });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) {
-      console.error("JWT Verification Error:", err.message);
-      const message = err.name === 'TokenExpiredError'
-        ? "Token expired."
-        : "Invalid or expired token.";
-      return res.status(403).json({ message });
-    }
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    req.user = user; // payload: { user_id, username, role_id }
+    // 🔁 Buscar permissões do role associado
+    const permissions = await getPermissionsForRole(decoded.role_id);
+
+    req.user = {
+      ...decoded,       // user_id, username, role_id
+      permissions       // ← agora o backend tem acesso às permissões
+    };
+
     next();
-  });
+  } catch (err) {
+    console.error("JWT Verification Error:", err.message);
+    const message = err.name === 'TokenExpiredError'
+      ? "Token expired."
+      : "Invalid or expired token.";
+    return res.status(403).json({ message });
+  }
 };
 
 /* --- Autorização por role_id (ex: 1 = admin) --- */
