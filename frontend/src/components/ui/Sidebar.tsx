@@ -19,7 +19,8 @@ import {
   List,
   UserCog,
   UserPlus,
-  DollarSign
+  DollarSign,
+  ArrowDownUp,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { authService } from "../../services/api";
@@ -37,6 +38,7 @@ export function Sidebar() {
     { to: "/contributions", label: "Contribuições",       icon: <Coins size={18} /> },
     { to: "/payments",      label: "Pagamentos",          icon: <CreditCard size={18} /> },
     { to: "/ledger",        label: "Transacções do Fundo",icon: <BookOpen size={18} /> },
+    { to: "/transfers",     label: "Transferencias Entre Contas",icon: <ArrowDownUp size={18} /> },
   ];
   /* ========================================================================= */
 
