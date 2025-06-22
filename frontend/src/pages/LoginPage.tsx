@@ -4,8 +4,10 @@ import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Loader2, Lock, User } from "lucide-react";
 import { authService } from "@/services/api";
 import "./LoginPage.css";
+import { useAuth } from "../context/AuthContext"; //
 
 export default function LoginPage() {
+  const { login } = useAuth(); //
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -23,19 +25,15 @@ export default function LoginPage() {
     setShowError(false);
 
     try {
-      // faz login no backend
-      const { token } = await authService.login(username, password);
-
-      // guarda token local
-      localStorage.setItem("token", token);
-
-      // redireciona para dashboard
-      navigate("/dashboard");
+      const success = await login(username, password); // 👈 Usa o contexto
+      if (success) {
+        navigate("/dashboard");
+      } else {
+        throw new Error("Login falhou");
+      }
     } catch (err: any) {
       setError("Credenciais inválidas");
       setShowError(true);
-
-      // esconde depois de 3 s
       setTimeout(() => setShowError(false), 3000);
     } finally {
       setLoading(false);

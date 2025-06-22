@@ -1,20 +1,21 @@
-import axios from 'axios';
+import axios from "axios";
 
-// Obter a URL base da API do ambiente
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// Define URL base da API (ex: http://localhost:5000 ou do .env)
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-// Criar instância do axios com configurações padrão
+// Cria uma instância única do axios
 const api = axios.create({
   baseURL: API_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
+  withCredentials: false,
 });
 
-// Interceptor para adicionar token de autenticação a todas as requisições
+// Intercepta todas as requisições para incluir o token JWT
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem("auth_token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -23,48 +24,45 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Interceptor para tratamento global de erros
+// Intercepta respostas para tratar erros globais (como 401)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Tratar erros de autenticação (401)
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem('auth_token');
-      window.location.href = '/login';
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("user_data");
+      window.location.href = "/login"; // força logout
     }
     return Promise.reject(error);
   }
 );
 
-// Serviço de autenticação
+
+// -----------------------------
+// Serviço de Autenticação
+// -----------------------------
 export const authService = {
   login: async (username: string, password: string) => {
-    try {
-      const response = await api.post('/auth/login', { username, password });
-      const { token, user } = response.data;
-      localStorage.setItem('auth_token', token);
-      localStorage.setItem('user_data', JSON.stringify(user));
-      return { token, user };
-    } catch (error) {
-      throw error;
-    }
+    const response = await api.post("/auth/login", { username, password });
+    return response.data; // { token, user }
   },
-  
+
   logout: () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_data');
-    window.location.href = '/login';
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("user_data");
+    window.location.href = "/login";
   },
-  
+
   isAuthenticated: () => {
-    return localStorage.getItem('auth_token') !== null;
+    return localStorage.getItem("auth_token") !== null;
   },
-  
+
   getCurrentUser: () => {
-    const userData = localStorage.getItem('user_data');
+    const userData = localStorage.getItem("user_data");
     return userData ? JSON.parse(userData) : null;
   },
 };
+
 
 // Serviço de dashboard
 export const dashboardService = {
