@@ -1,7 +1,8 @@
 const express = require("express");
 const Member = require("../models/memberModel");
-const { authenticateToken, authorizeRole } = require("../middleware/authMiddleware");
+const { authenticateToken, authorizePermission } = require("../middleware/authMiddleware");
 const AuditLogService = require("../services/auditLogService"); // Added
+const Client = require("../models/clientModel");
 
 const router = express.Router();
 
@@ -9,7 +10,7 @@ const router = express.Router();
 router.use(authenticateToken); // Ensure user is logged in
 
 // GET all members (Admin/Member access)
-router.get("/", async (req, res) => {
+router.get("/", authorizePermission("members", "view"), async (req, res) => {
   try {
     const members = await Member.findAll();
     res.json(members);
@@ -19,7 +20,7 @@ router.get("/", async (req, res) => {
 });
 
 // GET a specific member by ID (Admin/Member access)
-router.get("/:id", async (req, res) => {
+router.get("/:id", authorizePermission("members", "view"), async (req, res) => {
   try {
     const member = await Member.findById(req.params.id);
     if (!member) {
@@ -32,17 +33,53 @@ router.get("/:id", async (req, res) => {
 });
 
 // POST create a new member (Admin access only)
-router.post("/", authorizeRole("admin"), async (req, res) => {
-  const { name, document_id, contact_info, join_date, status } = req.body;
+router.post("/", authorizePermission("members", "create"), async (req, res) => {
+  const {
+  name,
+  document_id,
+  join_date,
+  status,
+  email,
+  phone,
+  address,
+  birth_date,
+  gender,
+  nationality,
+  marital_status,
+  occupation,
+  income_range,
+  pep_flag
+} = req.body;
   const created_by_user_id = req.user.userId;
   const ip_address = req.ip;
 
-  if (!name || !document_id || !contact_info) {
+  if (!name || !document_id ) {
       return res.status(400).json({ message: "Name, document ID, and contact info are required."}) ;
   }
 
   try {
-    const newMember = await Member.create({ name, document_id, contact_info, join_date, status });
+    const newMember = await Member.create({ name, document_id, join_date, status });
+
+    await Client.create({
+  member_id: newMember.member_id,
+  name: name,
+  document_id: document_id,
+  email: email || null,
+  phone: phone || null,
+  address: address || null,
+  birth_date: birth_date || null,
+  gender: gender || null,
+  nationality: nationality || null,
+  marital_status: marital_status || null,
+  occupation: occupation || null,
+  income_range: income_range || null,
+  pep_flag: pep_flag || false,
+  status: 'ativo',
+  client_type: 'internal',
+  risk_profile: '',
+  credit_rating: '',
+  documents: ''
+});
     
     // Log successful creation
     AuditLogService.logAction({
@@ -71,66 +108,116 @@ router.post("/", authorizeRole("admin"), async (req, res) => {
 });
 
 // PUT update a member by ID (Admin access only)
-router.put("/:id", authorizeRole("admin"), async (req, res) => {
-  const member_id = req.params.id;
-  const updateData = req.body; // { name, document_id, contact_info, status }
+router.put("/:id", authorizePermission("members", "update"), async (req, res) => {
+  const member_id = parseInt(req.params.id, 10);
+  const {
+    name,
+    document_id,
+    join_date,
+    status,
+    email,
+    phone,
+    address,
+    birth_date,
+    gender,
+    nationality,
+    marital_status,
+    occupation,
+    income_range,
+    pep_flag,
+  } = req.body;
+
   const updated_by_user_id = req.user.userId;
   const ip_address = req.ip;
-  let memberBeforeUpdate = null;
 
-   if (!updateData.name || !updateData.document_id || !updateData.contact_info || !updateData.status) {
-      return res.status(400).json({ message: "Name, document ID, contact info and status are required for update."}) ;
+  // ✅ Validação mínima
+  if (!name?.trim() || !document_id?.trim() || !status?.trim()) {
+    return res.status(400).json({ message: "Campos obrigatórios em falta." });
   }
 
   try {
-    // Fetch member before update for logging comparison
-    memberBeforeUpdate = await Member.findById(member_id);
-    if (!memberBeforeUpdate) {
-      return res.status(404).json({ message: "Member not found" });
+    // ⚠️ Verifica se o membro existe
+    const existingMember = await Member.findById(member_id);
+    if (!existingMember) {
+      return res.status(404).json({ message: "Sócio não encontrado." });
     }
 
-    const updatedMember = await Member.update(member_id, updateData);
-    // Member.update should return null/throw if not found, but we check above anyway
+    // ✅ Atualiza dados da tabela `members`
+    const updatedMember = await Member.update(member_id, {
+      name: name.trim(),
+      document_id: document_id.trim(),
+      join_date: join_date || existingMember.join_date,
+      status,
+    });
 
-    // Log successful update
+    // ✅ Verifica e atualiza o cliente interno associado
+    const internalClient = await Client.findByMemberId(member_id);
+    if (internalClient) {
+      await Client.update(internalClient.client_id, {
+        member_id,
+        name: name.trim(),
+        document_id: document_id.trim(),
+        email: email?.trim() || null,
+        phone: phone?.trim() || null,
+        address: address?.trim() || null,
+        birth_date: birth_date || null,
+        gender: gender || null,
+        nationality: nationality?.trim() || null,
+        marital_status: marital_status?.trim() || null,
+        occupation: occupation?.trim() || null,
+        income_range: income_range?.trim() || null,
+        pep_flag: Boolean(pep_flag),
+        status,
+        client_type: "internal",
+        risk_profile: "",   // ❗️se não usas ainda, mantém string vazia
+        credit_rating: "",
+        documents: "",
+      });
+    }
+
+    // ✅ Log de sucesso
     AuditLogService.logAction({
-        user_id: updated_by_user_id,
-        action: "member_updated",
-        entity_type: "member",
-        entity_id: member_id,
-        details: { 
-            // Simple logging: just note which fields were intended for update
-            updated_fields: Object.keys(updateData),
-            // More complex: Diff between memberBeforeUpdate and updatedMember
-            // previous_status: memberBeforeUpdate.status, 
-            // new_status: updatedMember.status 
-        },
-        ip_address: ip_address
+      user_id: updated_by_user_id,
+      action: "member_updated",
+      entity_type: "member",
+      entity_id: member_id,
+      details: { updated_fields: Object.keys(req.body) },
+      ip_address,
     });
 
-    res.json({ message: "Member updated successfully", member: updatedMember });
-  } catch (error) {
-     // Log failed update
-     AuditLogService.logAction({
-        user_id: updated_by_user_id,
-        action: "member_update_failed",
-        entity_type: "member",
-        entity_id: member_id,
-        details: { error: error.message, attempted_updates: Object.keys(updateData) },
-        ip_address: ip_address
+    return res.json({
+      message: "Sócio atualizado com sucesso",
+      member: updatedMember,
     });
-     if (error.message.includes("already exists")) {
-        return res.status(409).json({ message: error.message });
+
+  } catch (error) {
+    // ❌ Log de erro
+    AuditLogService.logAction({
+      user_id: updated_by_user_id,
+      action: "member_update_failed",
+      entity_type: "member",
+      entity_id: member_id,
+      details: {
+        error: error.message,
+        attempted_updates: Object.keys(req.body),
+      },
+      ip_address,
+    });
+
+    if (error.message.includes("already exists")) {
+      return res.status(409).json({ message: error.message });
     }
-     if (error.message.includes("not found")) { // Should be caught by the findById check
-         return res.status(404).json({ message: "Member not found" });
-     }
-    res.status(500).json({ message: "Error updating member", error: error.message });
+
+    return res.status(500).json({
+      message: "Erro ao atualizar sócio",
+      error: error.message,
+    });
   }
 });
 
+
 // DELETE a member by ID (soft delete - Admin access only)
-router.delete("/:id", authorizeRole("admin"), async (req, res) => {
+router.delete("/:id", authorizePermission("members", "delete"), async (req, res) => {
   const member_id = req.params.id;
   const deactivated_by_user_id = req.user.userId;
   const ip_address = req.ip;

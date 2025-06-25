@@ -59,6 +59,17 @@ export const clientService = {
     const res = await api.delete(`/clients/${id}`);
     return res.data;
   },
+
+  // src/services/api/clientService.ts
+getByMemberId: async (member_id: number): Promise<Client | null> => {
+  try {
+    const res = await api.get(`/clients/by-member/${member_id}`);
+    return res.data;
+  } catch (err) {
+    return null;
+  }
+},
+
 };
 
 export default clientService;

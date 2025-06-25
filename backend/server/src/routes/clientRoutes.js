@@ -46,100 +46,169 @@ router.get("/:id", authorizePermission("clients", "view"), async (req, res) => {
 
 // 🟡 CRIAR CLIENTE
 router.post("/", authorizePermission("clients", "create"), async (req, res) => {
-  const clientData = req.body;
-  const created_by_user_id = req.user.user_id;
+  const {
+    member_id,
+    name,
+    document_id,
+    email,
+    phone,
+    address,
+    client_type,
+    birth_date,
+    gender,
+    nationality,
+    marital_status,
+    occupation,
+    income_range,
+    pep_flag,
+    status,
+  } = req.body;
+
+  const created_by_user_id = req.user.userId;
   const ip_address = req.ip;
 
-  if (!clientData.name || !clientData.document_id || !clientData.client_type) {
-    return res.status(400).json({ message: "Name, document ID, contact info, and client type are required." });
-  }
-  if (!["internal", "external"].includes(clientData.client_type)) {
-    return res.status(400).json({ message: "Invalid client type." });
-  }
-  if (clientData.client_type === 'internal' && !clientData.member_id) {
-    return res.status(400).json({ message: "Member ID is required for internal clients." });
-  }
-  if (clientData.client_type === 'external') {
-    clientData.member_id = null;
+  if (!name?.trim() || !document_id?.trim() || !client_type) {
+    return res.status(400).json({ message: "Campos obrigatórios em falta." });
   }
 
   try {
-    const newClient = await Client.create(clientData);
+    const newClient = await Client.create({
+      member_id: member_id || null,
+      name: name.trim(),
+      document_id: document_id.trim(),
+      email: email?.trim() || null,
+      phone: phone?.trim() || null,
+      address: address?.trim() || null,
+      client_type,
+      birth_date: birth_date || null,
+      gender: gender || null,
+      nationality: nationality?.trim() || null,
+      marital_status: marital_status?.trim() || null,
+      occupation: occupation?.trim() || null,
+      income_range: income_range?.trim() || null,
+      pep_flag: Boolean(pep_flag),
+      status: status || "ativo",
+      risk_profile: "",
+      credit_rating: "",
+      documents: "",
+    });
 
     AuditLogService.logAction({
       user_id: created_by_user_id,
       action: "client_created",
       entity_type: "client",
       entity_id: newClient.client_id,
-      details: { name: newClient.name, type: newClient.client_type },
-      ip_address
+      details: { name: newClient.name, client_type },
+      ip_address,
     });
 
-    res.status(201).json({ message: "Client created successfully", client: newClient });
+    return res.status(201).json({
+      message: "Cliente criado com sucesso",
+      client: newClient,
+    });
+
   } catch (error) {
     AuditLogService.logAction({
       user_id: created_by_user_id,
       action: "client_creation_failed",
-      details: { error: error.message },
-      ip_address
+      entity_type: "client",
+      details: { error: error.message, document_id },
+      ip_address,
     });
 
-    res.status(500).json({ message: "Error creating client", error: error.message });
+    if (error.message.includes("already exists")) {
+      return res.status(409).json({ message: error.message });
+    }
+
+    return res.status(500).json({ message: "Erro ao criar cliente", error: error.message });
   }
 });
 
+
 // 🟠 ATUALIZAR CLIENTE
 router.put("/:id", authorizePermission("clients", "update"), async (req, res) => {
-  const client_id = req.params.id;
-  const updateData = req.body;
-  const updated_by_user_id = req.user.user_id;
+  const client_id = parseInt(req.params.id, 10);
+  const {
+    member_id,
+    name,
+    document_id,
+    email,
+    phone,
+    address,
+    client_type,
+    birth_date,
+    gender,
+    nationality,
+    marital_status,
+    occupation,
+    income_range,
+    pep_flag,
+    status,
+  } = req.body;
+
+  const updated_by_user_id = req.user.userId;
   const ip_address = req.ip;
 
-  if (!updateData.name || !updateData.document_id || !updateData.contact_info || !updateData.client_type) {
-    return res.status(400).json({ message: "Required fields missing." });
-  }
-
-  if (!["internal", "external"].includes(updateData.client_type)) {
-    return res.status(400).json({ message: "Invalid client type." });
-  }
-
-  if (updateData.client_type === 'internal' && !updateData.member_id) {
-    return res.status(400).json({ message: "Member ID is required for internal clients." });
-  }
-
-  if (updateData.client_type === 'external') {
-    updateData.member_id = null;
+  if (!name?.trim() || !document_id?.trim() || !client_type) {
+    return res.status(400).json({ message: "Campos obrigatórios em falta." });
   }
 
   try {
-    const clientBeforeUpdate = await Client.findById(client_id);
-    if (!clientBeforeUpdate) return res.status(404).json({ message: "Client not found" });
+    const existingClient = await Client.findById(client_id);
+    if (!existingClient) {
+      return res.status(404).json({ message: "Cliente não encontrado." });
+    }
 
-    const updatedClient = await Client.update(client_id, updateData);
+    const updatedClient = await Client.update(client_id, {
+      member_id: member_id || null,
+      name: name.trim(),
+      document_id: document_id.trim(),
+      email: email?.trim() || null,
+      phone: phone?.trim() || null,
+      address: address?.trim() || null,
+      client_type,
+      birth_date: birth_date || null,
+      gender: gender || null,
+      nationality: nationality?.trim() || null,
+      marital_status: marital_status?.trim() || null,
+      occupation: occupation?.trim() || null,
+      income_range: income_range?.trim() || null,
+      pep_flag: Boolean(pep_flag),
+      status: status || "ativo",
+      risk_profile: existingClient.risk_profile || "",
+      credit_rating: existingClient.credit_rating || "",
+      documents: existingClient.documents || "",
+    });
 
     AuditLogService.logAction({
       user_id: updated_by_user_id,
       action: "client_updated",
       entity_type: "client",
       entity_id: client_id,
-      details: { updated_fields: Object.keys(updateData) },
-      ip_address
+      details: { updated_fields: Object.keys(req.body) },
+      ip_address,
     });
 
-    res.json({ message: "Client updated successfully", client: updatedClient });
+    return res.json({ message: "Cliente atualizado com sucesso", client: updatedClient });
+
   } catch (error) {
     AuditLogService.logAction({
       user_id: updated_by_user_id,
       action: "client_update_failed",
       entity_type: "client",
       entity_id: client_id,
-      details: { error: error.message },
-      ip_address
+      details: { error: error.message, attempted_updates: Object.keys(req.body) },
+      ip_address,
     });
 
-    res.status(500).json({ message: "Error updating client", error: error.message });
+    if (error.message.includes("already exists")) {
+      return res.status(409).json({ message: error.message });
+    }
+
+    return res.status(500).json({ message: "Erro ao atualizar cliente", error: error.message });
   }
 });
+
 
 // 🔴 REMOVER CLIENTE
 router.delete("/:id", authorizePermission("clients", "delete"), async (req, res) => {
@@ -184,6 +253,20 @@ router.get("/:id/loans", authorizePermission("clients", "view"), async (req, res
     res.json(loans);
   } catch (error) {
     res.status(500).json({ message: "Error fetching loans", error: error.message });
+  }
+});
+
+// GET client by member_id
+router.get('/by-member/:member_id', async (req, res) => {
+  const memberId = req.params.member_id;
+  try {
+    const client = await Client.findByMemberId(memberId);
+    if (!client) {
+      return res.status(404).json({ message: "Client not found for this member" });
+    }
+    res.json(client);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching client", error: err.message });
   }
 });
 

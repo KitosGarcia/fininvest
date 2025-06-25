@@ -208,7 +208,15 @@ update: async (
     // const { rows } = await db.query(loanQuery, [clientId]);
     // return rows;
     return [];
-  }
+  },
+
+  // Find client by member_id
+findByMemberId: async (member_id) => {
+  const query = "SELECT * FROM clients WHERE member_id = $1";
+  const { rows } = await db.query(query, [member_id]);
+  return rows[0] || null;
+}
+
 };
 
 module.exports = Client;
