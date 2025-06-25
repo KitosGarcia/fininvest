@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 
 // ⚠️  Troca @ pelos paths relativos do teu setup Vite
 import LoginPage          from "./pages/LoginPage";
@@ -23,6 +24,8 @@ import TransfersPage      from "./components/transfers/TransfersPage";
 
 export default function App() {
   return (
+     <>
+      <Toaster position="top-center" />
     <Router>
       <Routes>
         {/* rota pública */}
@@ -59,5 +62,6 @@ export default function App() {
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>
+     </>
   );
 }

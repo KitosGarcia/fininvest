@@ -9,6 +9,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Label } from "../ui/label";
 import { clientService } from "../../services/api/clientService";
+import toast from "react-hot-toast";
 
 interface ClientFormModalProps {
   isOpen: boolean;
@@ -100,14 +101,17 @@ const payload = Object.fromEntries(
 
     if (isEdit) {
       await clientService.update(initialData.client_id, payload);
+      toast.success("Cliente atualizado com sucesso");
     } else {
       await clientService.create(payload);
+      toast.success("Cliente criado com sucesso");
     }
 
     onSuccess();
     onClose();
   } catch (err: any) {
-    alert(err?.response?.data?.message || "Erro ao gravar cliente");
+    //alert(err?.response?.data?.message || "Erro ao gravar cliente");//
+    toast.error("Erro ao gravar cliente");
   } finally {
     setLoading(false);
   }

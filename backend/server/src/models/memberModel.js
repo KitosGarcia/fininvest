@@ -26,13 +26,13 @@ const Member = {
   },
 
   // Create a new member
-  create: async ({ name, document_id, contact_info, join_date, status = 'active' }) => {
-    const query = `
-      INSERT INTO members (name, document_id, contact_info, join_date, status)
-      VALUES ($1, $2, $3, $4, $5)
-      RETURNING *;
-    `;
-    const values = [name, document_id, contact_info, join_date || new Date(), status];
+create: async ({ name, document_id, join_date, status = 'active' }) => {
+  const query = `
+    INSERT INTO members (name, document_id, join_date, status)
+    VALUES ($1, $2, $3, $4)
+    RETURNING *;
+  `;
+  const values = [name, document_id, join_date || new Date(), status];
     try {
       const { rows } = await db.query(query, values);
       return rows[0];
@@ -47,26 +47,27 @@ const Member = {
   },
 
   // Update an existing member
-  update: async (id, { name, document_id, contact_info, status }) => {
-    const query = `
-      UPDATE members
-      SET name = $1, document_id = $2, contact_info = $3, status = $4, updated_at = CURRENT_TIMESTAMP
-      WHERE member_id = $5
-      RETURNING *;
-    `;
-    const values = [name, document_id, contact_info, status, id];
-    try {
-      const { rows } = await db.query(query, values);
-      return rows[0];
-    } catch (error) {
-      console.error(`Error updating member with ID ${id}:`, error);
-      if (error.code === '23505') { 
-          throw new Error('Another member with this document ID already exists.');
-      }
-      throw error;
-    }
-  },
+update: async (id, { name, document_id, join_date, status }) => {
+  const query = `
+    UPDATE members
+    SET name = $1,
+        document_id = $2,
+        join_date = $3,
+        status = $4,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE member_id = $5
+    RETURNING *;
+  `;
+  const values = [name, document_id, join_date || new Date(), status, id];
 
+  try {
+    const { rows } = await db.query(query, values);
+    return rows[0];
+  } catch (error) {
+    console.error(`Error updating member with ID ${id}:`, error);
+    throw error;
+  }
+},
   // Delete a member (consider soft delete by changing status instead)
   delete: async (id) => {
     // Option 1: Hard delete
