@@ -2,7 +2,6 @@ const db = require("../config/db");
 const bcrypt = require("bcrypt");
 
 const User = {
-  // Encontrar utilizador por ID
   findById: async (id) => {
     const query = `
       SELECT u.user_id, u.member_id, u.username,
@@ -10,107 +9,77 @@ const User = {
              u.last_login, u.created_at
       FROM users u
       JOIN roles r ON r.role_id = u.role_id
-      WHERE u.user_id = $1
+      WHERE u.user_id = $1;
     `;
-    try {
-      const { rows } = await db.query(query, [id]);
-      return rows[0];
-    } catch (error) {
-      console.error(`Error finding user with ID ${id}:`, error);
-      throw error;
-    }
+    const { rows } = await db.query(query, [id]);
+    return rows[0] || null;
   },
 
-  // Encontrar utilizador por username
   findByUsername: async (username) => {
     const query = `
-      SELECT 
-        u.user_id,
-        u.username,
-        u.password_hash,
-        u.role_id,
-        r.role_name AS role_name
+      SELECT u.user_id, u.username, u.password_hash,
+             u.role_id, r.role_name
       FROM users u
-      JOIN roles r ON u.role_id = r.role_id
+      JOIN roles r ON r.role_id = u.role_id
       WHERE u.username = $1
-      LIMIT 1
+      LIMIT 1;
     `;
-    try {
-      const { rows } = await db.query(query, [username]);
-      return rows[0] || null;
-    } catch (error) {
-      console.error(`Error finding user with username ${username}:`, error);
-      throw error;
-    }
+    const { rows } = await db.query(query, [username]);
+    return rows[0] || null;
   },
 
-  // Criar novo utilizador
   create: async ({ member_id, username, password, role_id = 2, two_factor_enabled = false }) => {
-    const saltRounds = 10;
-    const password_hash = await bcrypt.hash(password, saltRounds);
-    const finalMemberId = member_id ? parseInt(member_id, 10) : null;
-
+    const password_hash = await bcrypt.hash(password, 10);
     const query = `
       INSERT INTO users (member_id, username, password_hash, role_id, two_factor_enabled)
       VALUES ($1, $2, $3, $4, $5)
       RETURNING user_id, member_id, username, role_id, created_at;
     `;
-    const values = [finalMemberId, username, password_hash, role_id, two_factor_enabled];
+    const values = [
+      member_id ? parseInt(member_id, 10) : null,
+      username,
+      password_hash,
+      role_id,
+      two_factor_enabled,
+    ];
 
     try {
       const { rows } = await db.query(query, values);
       return rows[0];
     } catch (error) {
-      console.error("Error creating user:", error);
-      if (error.code === '23505') {
-        throw new Error('Username or linked Member ID already exists.');
-      }
-      if (error.code === '23503') {
-        throw new Error('Associated Member ID not found.');
-      }
+      console.error("Erro ao criar utilizador:", error);
+      if (error.code === "23505") throw new Error("Username ou Member ID já existe.");
+      if (error.code === "23503") throw new Error("Member ID não encontrado.");
       throw error;
     }
   },
 
-  // Validar password
   verifyPassword: async (username, password) => {
     const user = await User.findByUsername(username);
     if (!user) return false;
     return await bcrypt.compare(password, user.password_hash);
   },
 
-  // Atualizar utilizador
-  update: async (id, { member_id, username, role_id, two_factor_enabled }) => {
+  update: async (id, updates) => {
     const fields = [];
     const values = [];
-    let index = 1;
+    let i = 1;
 
-    if (member_id !== undefined) {
-      fields.push(`member_id = $${index++}`);
-      values.push(member_id ? parseInt(member_id, 10) : null);
-    }
-    if (username !== undefined) {
-      fields.push(`username = $${index++}`);
-      values.push(username);
-    }
-    if (role_id !== undefined) {
-      fields.push(`role_id = $${index++}`);
-      values.push(role_id);
-    }
-    if (two_factor_enabled !== undefined) {
-      fields.push(`two_factor_enabled = $${index++}`);
-      values.push(two_factor_enabled);
+    for (const [key, val] of Object.entries(updates)) {
+      if (["member_id", "username", "role_id", "two_factor_enabled"].includes(key)) {
+        fields.push(`${key} = $${i++}`);
+        values.push(val);
+      }
     }
 
-    if (fields.length === 0) return await User.findById(id);
+    if (!fields.length) return await User.findById(id);
 
     fields.push(`updated_at = CURRENT_TIMESTAMP`);
     values.push(id);
 
     const query = `
-      UPDATE users 
-      SET ${fields.join(', ')} 
-      WHERE user_id = $${index} 
+      UPDATE users SET ${fields.join(", ")}
+      WHERE user_id = $${i}
       RETURNING user_id, member_id, username, role_id, two_factor_enabled, updated_at;
     `;
 
@@ -118,48 +87,32 @@ const User = {
       const { rows } = await db.query(query, values);
       return rows[0];
     } catch (error) {
-      console.error(`Error updating user with ID ${id}:`, error);
-      if (error.code === '23505') {
-        throw new Error('Username or linked Member ID already exists.');
-      }
-      if (error.code === '23503') {
-        throw new Error('Associated Member ID not found.');
-      }
+      console.error(`Erro ao atualizar utilizador ID ${id}:`, error);
+      if (error.code === "23505") throw new Error("Username ou Member ID já existe.");
+      if (error.code === "23503") throw new Error("Member ID inválido.");
       throw error;
     }
   },
 
-  // Atualizar data de último login
   updateLastLogin: async (id) => {
-    const query = "UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE user_id = $1";
     try {
-      await db.query(query, [id]);
+      await db.query("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE user_id = $1;", [id]);
     } catch (error) {
-      console.error(`Error updating last login for user ID ${id}:`, error);
+      console.error(`Erro ao atualizar último login do user ${id}:`, error);
     }
   },
 
-  // Listar todos os utilizadores
   listAll: async () => {
     const query = `
-      SELECT u.user_id,
-             u.member_id,
-             u.username,
-             u.role_id,
-             r.role_name,
-             u.two_factor_enabled
+      SELECT u.user_id, u.member_id, u.username, u.role_id,
+             r.role_name, u.two_factor_enabled
       FROM users u
       JOIN roles r ON r.role_id = u.role_id
-      ORDER BY u.username
+      ORDER BY u.username;
     `;
-    try {
-      const { rows } = await db.query(query);
-      return rows;
-    } catch (error) {
-      console.error("Error listing users:", error);
-      throw error;
-    }
-  }
+    const { rows } = await db.query(query);
+    return rows;
+  },
 };
 
 module.exports = User;
