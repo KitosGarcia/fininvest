@@ -100,9 +100,12 @@ export default function MemberViewModal({
         </div>
 
         <div className="flex justify-end mt-6">
-          <Button onClick={printView} variant="outline">
-            Imprimir
-          </Button>
+    <button
+      onClick={() => window.print()}
+      className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white"
+    >
+      Imprimir Ficha
+    </button>
         </div>
       </DialogContent>
     </Dialog>

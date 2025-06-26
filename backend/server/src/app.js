@@ -20,7 +20,11 @@ const currencyRoutes = require("./routes/currencyRoutes"); // Added
 const companyRoutes = require("./routes/companyRoutes"); //Added
 const roleRoutes = require("./routes/roleRoutes"); // Added
 const userRoutes = require("./routes/userRoutes");
+const contributionPaymentRoutes = require("./routes/contributionPaymentRoutes");
 
+
+
+// Import controllers
 
 
 const app = express();
@@ -51,6 +55,7 @@ app.use("/api/currencies", currencyRoutes); // Auth handled within route file
 app.use("/api/company", companyRoutes); 
 app.use("/api/roles", roleRoutes);
 app.use("/api/users",  userRoutes);
+app.use("/api/contributionpayments", contributionPaymentRoutes); // Auth handled within route file
 
 // Global Error Handler (Basic Example)
 app.use((err, req, res, next) => {
