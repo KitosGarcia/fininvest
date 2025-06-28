@@ -24,7 +24,10 @@ const Contribution = {
 
   // Buscar todas contribuições (com filtros opcionais)
   findAll: async ({ member_id, type, status, month } = {}) => {
-    let query = `SELECT * FROM contributions WHERE is_active = TRUE`;
+    let query = `  SELECT c.*, m.name AS member_name
+    FROM contributions c
+    JOIN members m ON m.member_id = c.member_id
+    WHERE 1=1`;
     const params = [];
 
     if (member_id) {
