@@ -1,6 +1,7 @@
 const ContributionPayment = require("../models/contributionPaymentModel");
 const Contribution = require("../models/contributionModel");
 const AuditLogService = require("../services/auditLogService");
+const { authenticateToken } = require("../middleware/authMiddleware");
 
 const contributionPaymentController = {
   // 🔍 Buscar todas as contribuições pendentes por sócio
@@ -34,20 +35,28 @@ const contributionPaymentController = {
   },
 
   // 💰 Criar e distribuir pagamento
-  createPayment: async (req, res) => {
+createPayment: async (req, res) => {
     const {
       member_id,
       amount,
       bank_account_id,
       receipt_url,
+      payment_date,
+      method,
+      notes,
+      contribution_ids,
     } = req.body;
 
-    const created_by = req.user.userId;
+    const created_by = req.user?.user_id;
     const ip_address = req.ip;
 
-    if (!member_id || !amount || !bank_account_id) {
+      if (!created_by) {
+    return res.status(401).json({ message: "Usuário não autenticado corretamente" });
+  }
+
+    if (!member_id || !amount || !bank_account_id || !contribution_ids?.length) {
       return res.status(400).json({
-        message: "Campos obrigatórios em falta: member_id, amount, bank_account_id",
+        message: "Campos obrigatórios em falta",
       });
     }
 
@@ -58,28 +67,26 @@ const contributionPaymentController = {
         bank_account_id,
         created_by,
         receipt_url,
+        payment_date,
+        method,
+        notes,
+        contribution_ids,
       });
 
-      // Log de sucesso
       AuditLogService.logAction({
         user_id: created_by,
         action: "contribution_payment_created",
         entity_type: "contribution_payment",
         entity_id: result.payment_ids?.[0] || null,
-        details: { member_id, amount, saldadas: result.applied_to },
+        details: { member_id, amount, payment_date, saldadas: result.applied_to },
         ip_address,
       });
 
       res.status(201).json({
         message: "Pagamento processado com sucesso",
-        applied_to: result.applied_to,
-        payment_ids: result.payment_ids,
-        remaining_amount: result.remaining_amount,
+        ...result,
       });
     } catch (err) {
-      console.error("Erro ao processar pagamento de contribuição:", err);
-
-      // Log de falha
       AuditLogService.logAction({
         user_id: created_by,
         action: "contribution_payment_failed",

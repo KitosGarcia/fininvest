@@ -5,6 +5,7 @@ import { format, isBefore, parseISO } from "date-fns";
 import { pt } from "date-fns/locale";
 import { toast } from "react-hot-toast";
 import ContributionFormModal from "./ContributionFormModal";
+import ContributionPaymentModal from "../contributionspayments/ContributionPaymentsModal";
 
 const ContributionsPage: React.FC = () => {
   const [contributions, setContributions] = useState<Contribution[]>([]);
@@ -12,6 +13,7 @@ const ContributionsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedContribution, setSelectedContribution] = useState<Contribution | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [filters, setFilters] = useState({
     member: "",
     type: "",
@@ -56,6 +58,11 @@ const ContributionsPage: React.FC = () => {
       setSelectedContribution(contribution);
       setIsModalOpen(true);
     }
+  };
+
+  const openPayment = (contribution: Contribution) => {
+    setSelectedContribution(contribution);
+    setIsPaymentOpen(true);
   };
 
   const handleDelete = async (id: number) => {
@@ -190,7 +197,7 @@ const ContributionsPage: React.FC = () => {
                     ) : null}
                   </td>
                   <td className="px-4 py-2">{Number(c.amount_due).toFixed(2)} AOA</td>
-                  <td className="px-4 py-2">{Number(c.amount_paid).toFixed(2)} AOA</td>
+                  <td className="px-4 py-2">{Number(c.amount_paid).toFixed(2)} </td>
                   <td className="px-4 py-2">{c.status}</td>
                   <td className="px-4 py-2 space-x-2">
                     {c.amount_paid === 0 && (
@@ -204,7 +211,7 @@ const ContributionsPage: React.FC = () => {
                       </>
                     )}
                     {(c.status === "por_pagar" || c.status === "parcial") && (
-                      <button className="text-yellow-400 hover:underline">
+                      <button className="text-yellow-400 hover:underline" onClick={() => openPayment(c)}>
                         Pagar
                       </button>
                     )}
@@ -229,13 +236,30 @@ const ContributionsPage: React.FC = () => {
       )}
 
       {isModalOpen && (
-        <ContributionFormModal
-          isOpen={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
-          initialData={selectedContribution}
-          onSuccess={loadContributions}
-        />
-      )}
+  <ContributionFormModal
+    isOpen={isModalOpen}
+    onClose={() => setIsModalOpen(false)}
+    initialData={selectedContribution}
+    onSuccess={loadContributions}
+  />
+)}
+
+{isPaymentOpen && selectedContribution && (
+  <ContributionPaymentModal
+    isOpen={isPaymentOpen}
+    onClose={() => setIsPaymentOpen(false)}
+    memberId={selectedContribution.member_id}
+    memberName={selectedContribution.member_name || ""}
+    contributions={contributions.filter(
+      (c) =>
+        c.member_id === selectedContribution.member_id &&
+        c.status !== "pago" &&
+        c.status !== "cancelado"
+    )}
+    onSuccess={loadContributions}
+  />
+)}
+
     </div>
   );
 };
