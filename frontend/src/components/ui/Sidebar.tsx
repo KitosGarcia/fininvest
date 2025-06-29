@@ -1,13 +1,12 @@
-// src/components/layout/Sidebar.tsx
 import { useState } from "react";
 import {
   Home,
-  Users,          // Sócios
-  Briefcase,        // Clientes
-  FileText,         // Empréstimos
-  Coins,            // Contribuições
-  CreditCard,       // Pagamentos de empréstimo
-  BookOpen,         // Ledger / Transacções do Fundo
+  Users,
+  Briefcase,
+  FileText,
+  Coins,
+  CreditCard,
+  BookOpen,
   LogOut,
   Settings,
   ChevronDown,
@@ -21,6 +20,7 @@ import {
   UserPlus,
   DollarSign,
   ArrowDownUp,
+  Layers3, // novo ícone para tiers
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { authService } from "../../services/api";
@@ -29,18 +29,16 @@ import { useAuth } from "../../context/AuthContext";
 export function Sidebar() {
   const { user } = useAuth();
   const [configOpen, setConfigOpen] = useState(false);
+  const [membersOpen, setMembersOpen] = useState(false); // submenu sócios
 
-  /* ===== MENUS PRINCIPAIS (módulos) – fácil de controlar por permissões ===== */
   const mainMenus = [
-    { to: "/members",       label: "Sócios",              icon: <Users size={18} /> },
     { to: "/clients",       label: "Clientes",            icon: <Briefcase size={18} /> },
     { to: "/loans",         label: "Empréstimos",         icon: <FileText size={18} /> },
     { to: "/contributions", label: "Contribuições",       icon: <Coins size={18} /> },
     { to: "/payments",      label: "Pagamentos",          icon: <CreditCard size={18} /> },
     { to: "/ledger",        label: "Transacções do Fundo",icon: <BookOpen size={18} /> },
-    { to: "/transfers",     label: "Transferencias Entre Contas",icon: <ArrowDownUp size={18} /> },
+    { to: "/transfers",     label: "Transferencias Entre Contas", icon: <ArrowDownUp size={18} /> },
   ];
-  /* ========================================================================= */
 
   const handleLogout = () => {
     authService.logout();
@@ -49,18 +47,38 @@ export function Sidebar() {
 
   return (
     <aside className="w-64 bg-blue-950 text-blue-100 h-full flex flex-col shadow-lg">
-      {/* --------------- LOGO --------------- */}
       <div className="p-4 text-xl tracking-wide border-b border-blue-800">
         FININVEST
       </div>
 
-      {/* --------------- NAV --------------- */}
       <nav className="flex-1 p-4 space-y-2">
         <NavLink className="flex items-center gap-2 hover:text-white" to="/dashboard">
           <Home size={18} /> Dashboard
         </NavLink>
 
-        {/* Módulos – vai ser fácil esconder/mostrar por perfil mais tarde */}
+        {/* Submenu Sócios */}
+        <button
+          className="flex items-center justify-between w-full text-left hover:text-white"
+          onClick={() => setMembersOpen(!membersOpen)}
+        >
+          <span className="flex items-center gap-2">
+            <Users size={18} /> Sócios
+          </span>
+          {membersOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+        </button>
+
+        {membersOpen && (
+          <div className="ml-6 mt-1 space-y-1 text-sm">
+            <NavLink to="/members" className="flex items-center gap-2 hover:text-white">
+              <Users size={16}/> Lista de Sócios
+            </NavLink>
+            <NavLink to="/members/tiers" className="flex items-center gap-2 hover:text-white">
+              <Layers3 size={16}/> Escalões de Quota
+            </NavLink>
+          </div>
+        )}
+
+        {/* Outros módulos */}
         {mainMenus.map((m) => (
           <NavLink
             key={m.to}
@@ -71,7 +89,7 @@ export function Sidebar() {
           </NavLink>
         ))}
 
-        {/* ------------ SUBMENU: Configurações ------------- */}
+        {/* Configurações */}
         <button
           className="flex items-center justify-between w-full text-left hover:text-white"
           onClick={() => setConfigOpen(!configOpen)}
@@ -88,7 +106,6 @@ export function Sidebar() {
             <NavLink to="/settings/currency"   className="flex items-center gap-2 hover:text-white"><DollarSign size={16}/> Moedas</NavLink>
             <NavLink to="/settings/bank-accounts" className="flex items-center gap-2 hover:text-white"><Landmark size={16}/> Contas Bancárias</NavLink>
 
-            {/* Só admins podem gerir utilizadores */}
             {Number(user?.role_id) === 1 && (
               <NavLink to="/settings/users" className="flex items-center gap-2 hover:text-white">
                 <UserPlus size={18}/> Utilizadores
@@ -104,7 +121,6 @@ export function Sidebar() {
         )}
       </nav>
 
-      {/* --------------- LOGOUT --------------- */}
       <div className="p-4 border-t border-blue-800">
         <button
           onClick={handleLogout}
