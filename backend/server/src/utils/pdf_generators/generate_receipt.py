@@ -90,6 +90,6 @@ if __name__ == "__main__":
             "Valor Pago": "100.00 EUR",
             "Método Pagamento": "Transferência Bancária"
         }
-        test_output = "/home/ubuntu/fininvest/receipt_example.pdf"
+        test_output = "/home/lb/documentos/receipt_example.pdf"
         generate_pdf(test_output, test_data)
 
