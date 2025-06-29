@@ -3,7 +3,8 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
+  DialogDescription
 } from '../../components/ui/dialog';
 import {
   Tabs,
@@ -102,6 +103,9 @@ const MemberContributionStatusModal: React.FC<Props> = ({ isOpen, onClose, membe
       <DialogContent className="w-full max-w-6xl bg-jarvis.bg text-jarvis.text max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">Estado das Contribuições do Sócio</DialogTitle>
+          <DialogDescription>
+            Visualização detalhada das quotas e taxas ao longo dos anos.
+          </DialogDescription>
           {data?.nome && <p className="text-sm mt-1">Nome: {data.nome}</p>}
         </DialogHeader>
 
@@ -113,10 +117,23 @@ const MemberContributionStatusModal: React.FC<Props> = ({ isOpen, onClose, membe
           </div>
         ) : (
           <div className="mt-2 space-y-4">
-            <div className="bg-jarvis.panel rounded p-4 text-sm">
-              <p><strong>Participação no Fundo:</strong> {(data.participacao * 100).toFixed(2)}%</p>
-              <p><strong>Total de Quotas Pagas:</strong> {formatCurrency(data.totalQuotasPagas)}</p>
-              <p><strong>Status Geral:</strong> {data.apto ? <Badge className="bg-green-700">Apto</Badge> : <Badge className="bg-red-700">Inapto</Badge>}</p>
+            <div className="bg-jarvis.panel rounded p-4 text-sm space-y-1">
+              <div className="flex items-center gap-2">
+                <strong>Participação no Fundo:</strong>
+                {(data.participacao * 100).toFixed(2)}%
+              </div>
+              <div className="flex items-center gap-2">
+                <strong>Total de Quotas Pagas:</strong>
+                {formatCurrency(data.totalQuotasPagas)}
+              </div>
+              <div className="flex items-center gap-2">
+                <strong>Status Geral:</strong>
+                {data.apto ? (
+                  <Badge className="bg-green-700">Apto</Badge>
+                ) : (
+                  <Badge className="bg-red-700">Inapto</Badge>
+                )}
+              </div>
             </div>
 
             <Tabs defaultValue={data.anos[0]?.ano.toString()} className="mt-4">
@@ -130,13 +147,16 @@ const MemberContributionStatusModal: React.FC<Props> = ({ isOpen, onClose, membe
               {data.anos.map((ano) => (
                 <TabsContent key={ano.ano} value={ano.ano.toString()} className="pt-4">
                   <div className="text-sm mb-2 space-y-1">
-                    <p><strong>Ano:</strong> {ano.ano}</p>
-                    <p><strong>Participação no Fundo ({ano.ano}):</strong> {(ano.participacaoAno * 100).toFixed(2)}%</p>
-                    <p><strong>Total de Quotas Pagas:</strong> {formatCurrency(ano.totalQuotaPaid)}</p>
-                    <p><strong>Total de Taxas Pagas:</strong> {formatCurrency(ano.totalTaxaPaid)}</p>
-                    <p><strong>Por Pagar Quotas:</strong> {formatCurrency(ano.totalQuotaDue - ano.totalQuotaPaid)}</p>
-                    <p><strong>Por Pagar Taxas:</strong> {formatCurrency(ano.totalTaxaDue - ano.totalTaxaPaid)}</p>
-                    <p><strong>Status do Ano:</strong> {ano.statusAno === 'apto' ? <Badge className="bg-green-700">Apto</Badge> : <Badge className="bg-red-700">Inapto</Badge>}</p>
+                    <div><strong>Ano:</strong> {ano.ano}</div>
+                    <div><strong>Participação no Fundo ({ano.ano}):</strong> {(ano.participacaoAno * 100).toFixed(2)}%</div>
+                    <div><strong>Total de Quotas Pagas:</strong> {formatCurrency(ano.totalQuotaPaid)}</div>
+                    <div><strong>Total de Taxas Pagas:</strong> {formatCurrency(ano.totalTaxaPaid)}</div>
+                    <div><strong>Por Pagar Quotas:</strong> {formatCurrency(ano.totalQuotaDue - ano.totalQuotaPaid)}</div>
+                    <div><strong>Por Pagar Taxas:</strong> {formatCurrency(ano.totalTaxaDue - ano.totalTaxaPaid)}</div>
+                    <div className="flex items-center gap-2">
+                      <strong>Status do Ano:</strong>
+                      {ano.statusAno === 'apto' ? <Badge className="bg-green-700">Apto</Badge> : <Badge className="bg-red-700">Inapto</Badge>}
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
@@ -194,18 +214,14 @@ const MemberContributionStatusModal: React.FC<Props> = ({ isOpen, onClose, membe
               ))}
 
               <TabsContent value="geral" className="pt-4">
-                <div className="bg-jarvis.panel rounded p-4 text-sm space-y-2">
-                  <p><strong>Total de Quotas Pagas:</strong> {formatCurrency(data.totalQuotasPagas)}</p>
-                  <p><strong>Total de Taxas Pagas:</strong> {formatCurrency(
-                    data.anos.reduce((sum, a) => sum + a.totalTaxaPaid, 0)
-                  )}</p>
-                  <p><strong>Por Pagar Quotas:</strong> {formatCurrency(
+                <div className="text-sm space-y-2">
+                  <div><strong>Total de Quotas Pagas:</strong> {formatCurrency(data.totalQuotasPagas)}</div>
+                  <div><strong>Por Pagar Quotas:</strong> {formatCurrency(
                     data.anos.reduce((sum, a) => sum + (a.totalQuotaDue - a.totalQuotaPaid), 0)
-                  )}</p>
-                  <p><strong>Por Pagar Taxas:</strong> {formatCurrency(
+                  )}</div>
+                  <div><strong>Por Pagar Taxas:</strong> {formatCurrency(
                     data.anos.reduce((sum, a) => sum + (a.totalTaxaDue - a.totalTaxaPaid), 0)
-                  )}</p>
-                  <p><strong>Status Geral:</strong> {data.apto ? <Badge className="bg-green-700">Apto</Badge> : <Badge className="bg-red-700">Inapto</Badge>}</p>
+                  )}</div>
                 </div>
               </TabsContent>
             </Tabs>
