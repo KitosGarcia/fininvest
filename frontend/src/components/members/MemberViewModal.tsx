@@ -1,4 +1,5 @@
-// src/components/members/MemberViewModal.tsx
+import { useState } from 'react';
+
 import {
   Dialog,
   DialogContent,
@@ -6,6 +7,7 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import { Button } from "../ui/button";
+import MemberContributionStatusModal from './MemberContributionStatusModal';
 
 interface MemberViewModalProps {
   isOpen: boolean;
@@ -18,6 +20,8 @@ export default function MemberViewModal({
   onClose,
   member,
 }: MemberViewModalProps) {
+  const [contributionStatusOpen, setContributionStatusOpen] = useState(false);
+
   const printView = () => {
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
@@ -69,45 +73,61 @@ export default function MemberViewModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="bg-blue-950 text-blue-100 max-w-2xl border border-blue-800 max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Ficha de Sócio</DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={isOpen} onOpenChange={onClose}>
+        <DialogContent className="bg-blue-950 text-blue-100 max-w-2xl border border-blue-800 max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Ficha de Sócio</DialogTitle>
+          </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 text-sm">
-          {[
-            ["Nome", member.name],
-            ["Documento", member.document_id],
-            ["Email", member.email],
-            ["Telefone", member.phone],
-            ["Morada", member.address],
-            ["Data Nasc.", member.birth_date],
-            ["Género", member.gender],
-            ["Nacionalidade", member.nationality],
-            ["Estado civil", member.marital_status],
-            ["Profissão", member.occupation],
-            ["Rendimento", member.income_range],
-            ["PEP", member.pep_flag ? "Sim" : "Não"],
-            ["Data Entrada", member.join_date],
-            ["Estado", member.status],
-          ].map(([label, value]) => (
-            <div key={label} className="flex flex-col">
-              <span className="text-xs text-blue-300">{label}</span>
-              <span className="text-base">{value || "—"}</span>
-            </div>
-          ))}
-        </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 text-sm">
+            {[
+              ["Nome", member.name],
+              ["Documento", member.document_id],
+              ["Email", member.email],
+              ["Telefone", member.phone],
+              ["Morada", member.address],
+              ["Data Nasc.", member.birth_date],
+              ["Género", member.gender],
+              ["Nacionalidade", member.nationality],
+              ["Estado civil", member.marital_status],
+              ["Profissão", member.occupation],
+              ["Rendimento", member.income_range],
+              ["PEP", member.pep_flag ? "Sim" : "Não"],
+              ["Data Entrada", member.join_date],
+              ["Estado", member.status],
+            ].map(([label, value]) => (
+              <div key={label} className="flex flex-col">
+                <span className="text-xs text-blue-300">{label}</span>
+                <span className="text-base">{value || "—"}</span>
+              </div>
+            ))}
+          </div>
 
-        <div className="flex justify-end mt-6">
-    <button
-      onClick={() => window.print()}
-      className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white"
-    >
-      Imprimir Ficha
-    </button>
-        </div>
-      </DialogContent>
-    </Dialog>
+          <div className="flex flex-col gap-3 mt-6">
+            <button
+              onClick={printView}
+              className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white"
+            >
+              Imprimir Ficha
+            </button>
+
+            <Button
+              onClick={() => setContributionStatusOpen(true)}
+              className="w-full bg-jarvis.accent text-white"
+            >
+              Ver Estado de Contribuições
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <MemberContributionStatusModal
+        isOpen={contributionStatusOpen}
+        onClose={() => setContributionStatusOpen(false)}
+        memberId={member.member_id}
+        memberName={member.name}
+      />
+    </>
   );
 }

@@ -16,6 +16,11 @@ export interface Contribution extends ContributionInput {
   updated_at: string;
 }
 
+  export const getContributionStatus = async (memberId: number) => {
+  const res = await api.get(`/contributions/status/${memberId}`);
+  return res.data;
+}
+
 export const contributionService = {
   
   // Buscar todas as contribuições
@@ -57,6 +62,8 @@ export const contributionService = {
     const res = await api.put(`/contributions/${id}/confirm`, data);
     return res.data.contribution;
   },
+
+
 
   // Remover contribuição
   delete: async (id: number): Promise<{ message: string }> => {
