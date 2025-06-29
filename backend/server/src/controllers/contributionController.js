@@ -1,5 +1,8 @@
 const Contribution = require("../models/contributionModel");
 const { authorizePermission } = require("../middleware/authMiddleware");
+const db = require('../db/db');
+
+
 
 const getAllContributions = async (req, res) => {
   try {
@@ -98,10 +101,86 @@ const deleteContribution = async (req, res) => {
   }
 };
 
+
+
+const getStatusByMember = async (req, res) => {
+  const memberId = req.params.memberId;
+
+  try {
+    const contributions = await db('contributions')
+      .select('type', 'amount_due', 'amount_paid', 'status', 'reference_month')
+      .where({ member_id: memberId })
+      .orderBy('reference_month', 'asc');
+
+    const totalQuotasAllResult = await db('contributions')
+      .where({ type: 'quota' })
+      .sum('amount_paid as total');
+    const totalQuotasAll = Number(totalQuotasAllResult[0].total) || 1;
+
+    const anos = {};
+    let totalQuotasMember = 0;
+    let totalTaxasPagas = 0;
+
+    for (const c of contributions) {
+      const date = new Date(c.reference_month);
+      const ano = date.getFullYear();
+      const mes = date.toLocaleString('pt-PT', { month: 'long' });
+
+      if (!anos[ano]) {
+        anos[ano] = {
+          ano,
+          quotas: [],
+          taxas: [],
+          statusAno: 'apto'
+        };
+      }
+
+      const item = {
+        mes,
+        valor: Number(c.amount_due),
+        status: c.status,
+        amount_paid: Number(c.amount_paid) || 0
+      };
+
+      if (c.type === 'quota') {
+        anos[ano].quotas.push(item);
+        totalQuotasMember += item.amount_paid;
+        if (c.status !== 'pago') anos[ano].statusAno = 'inapto';
+      } else {
+        anos[ano].taxas.push(item);
+        totalTaxasPagas += item.amount_paid;
+        if (c.status !== 'pago') anos[ano].statusAno = 'inapto';
+      }
+    }
+
+    const member = await db('members')
+      .select('name')
+      .where({ member_id: memberId })
+      .first();
+
+    const response = {
+      nome: member?.name || 'N/A',
+      totalQuotasPagas: totalQuotasMember,
+      totalTaxasPagas,
+      totalQuotasFundo: totalQuotasAll,
+      participacao: totalQuotasMember / totalQuotasAll,
+      apto: Object.values(anos).every((a) => a.statusAno === 'apto'),
+      anos: Object.values(anos)
+    };
+
+    res.json(response);
+  } catch (error) {
+    console.error('Erro ao buscar status de contribuições:', error);
+    res.status(500).json({ error: 'Erro interno ao processar status de contribuições' });
+  }
+};
+
+
 module.exports = {
   getAllContributions,
   getContributionById,
   createContribution,
   updateContribution,
-  deleteContribution
+  deleteContribution,
+  getStatusByMember
 };
