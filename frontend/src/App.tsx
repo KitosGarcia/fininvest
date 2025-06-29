@@ -18,6 +18,7 @@ import ContributionsPage  from "./components/contributions/ContributionsPage";
 import PaymentsPage       from "./components/payments/PaymentsPage";
 import LedgerPage         from "./components/ledger/LedgerPage";
 import TransfersPage      from "./components/transfers/TransfersPage";
+import TiersPage from "./pages/TiersPage"
 
 
 
@@ -55,6 +56,7 @@ export default function App() {
           <Route path="/payments"      element={<PrivateRoute><PaymentsPage /></PrivateRoute>} />
           <Route path="/ledger"        element={<PrivateRoute><LedgerPage /></PrivateRoute>} />
           <Route path="/transfers"     element={<PrivateRoute><TransfersPage /></PrivateRoute>} />
+          <Route path="/members/tiers" element={<PrivateRoute><TiersPage /></PrivateRoute>} />
 
         </Route>
 

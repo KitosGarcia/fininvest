@@ -35,6 +35,7 @@ const roleRoutes = require("./routes/roleRoutes");
 const userRoutes = require("./routes/userRoutes");
 const contributionPaymentRoutes = require("./routes/contributionPaymentRoutes");
 const paymentMethodRoutes = require("./routes/paymentMethodRoutes");
+const tierRoutes = require('./routes/tierRoutes');
 
 // Basic Route
 app.get("/", (req, res) => {
@@ -60,6 +61,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/contribution-payments", contributionPaymentRoutes);
 app.use("/api/bank-accounts", bankAccountRoutes);
 app.use("/api/payment-methods", paymentMethodRoutes);
+app.use('/api/tiers', tierRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {
