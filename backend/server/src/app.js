@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const { authenticateToken } = require("./middleware/authMiddleware");
 
 const app = express();
 app.use(cors());
@@ -21,7 +22,6 @@ app.use(express.urlencoded({ extended: true }));
 const authRoutes = require("./routes/authRoutes");
 const memberRoutes = require("./routes/memberRoutes");
 const clientRoutes = require("./routes/clientRoutes");
-const loanRoutes = require("./routes/loanRoutes");
 const contributionRoutes = require("./routes/contributionRoutes");
 const loanPaymentRoutes = require("./routes/loanPaymentRoutes");
 const fundTransactionRoutes = require("./routes/fundTransactionRoutes");
@@ -36,6 +36,9 @@ const userRoutes = require("./routes/userRoutes");
 const contributionPaymentRoutes = require("./routes/contributionPaymentRoutes");
 const paymentMethodRoutes = require("./routes/paymentMethodRoutes");
 const tierRoutes = require('./routes/tierRoutes');
+const loanRoutes = require('./routes/loanRoutes');
+
+const alertRoutes = require('./routes/alertRoutes');
 
 // Basic Route
 app.get("/", (req, res) => {
@@ -62,6 +65,9 @@ app.use("/api/contribution-payments", contributionPaymentRoutes);
 app.use("/api/bank-accounts", bankAccountRoutes);
 app.use("/api/payment-methods", paymentMethodRoutes);
 app.use('/api/tiers', tierRoutes);
+app.use("/api/alerts", authenticateToken, alertRoutes);
+
+
 
 // Global Error Handler
 app.use((err, req, res, next) => {

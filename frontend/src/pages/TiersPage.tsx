@@ -16,9 +16,15 @@ const TiersPage: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [editData, setEditData] = useState<any | null>(null);
 
+  const [filters, setFilters] = useState({
+    member_name: '',
+    quota_amount: '',
+    start_date: '',
+    end_date: ''
+  });
+
   useEffect(() => {
     if (!user) {
-      // Se o utilizador não estiver autenticado, redireciona
       navigate('/login');
       return;
     }
@@ -50,6 +56,28 @@ const TiersPage: React.FC = () => {
     }
   };
 
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({ ...prev, [name]: value }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      member_name: '',
+      quota_amount: '',
+      start_date: '',
+      end_date: ''
+    });
+  };
+
+  const filteredTiers = tiers.filter(tier => {
+    const matchName = tier.member_name.toLowerCase().includes(filters.member_name.toLowerCase());
+    const matchQuota = filters.quota_amount === '' || Number(tier.quota_amount) === Number(filters.quota_amount);
+    const matchStart = filters.start_date === '' || tier.start_date >= filters.start_date;
+    const matchEnd = filters.end_date === '' || tier.end_date <= filters.end_date;
+    return matchName && matchQuota && matchStart && matchEnd;
+  });
+
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
@@ -60,9 +88,12 @@ const TiersPage: React.FC = () => {
       </div>
 
       <TierTable
-        tiers={tiers}
+        tiers={filteredTiers}
         onEdit={(tier) => { setEditData(tier); setShowModal(true); }}
         onDelete={handleDelete}
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onClearFilters={clearFilters}
       />
 
       <TierFormModal

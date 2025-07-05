@@ -21,6 +21,7 @@ import {
   DollarSign,
   ArrowDownUp,
   Layers3, // novo ícone para tiers
+  BarChart2,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { authService } from "../../services/api";
@@ -30,6 +31,7 @@ export function Sidebar() {
   const { user } = useAuth();
   const [configOpen, setConfigOpen] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false); // submenu sócios
+  const [reportsOpen, setReportsOpen] = useState(false);
 
   const mainMenus = [
     { to: "/clients",       label: "Clientes",            icon: <Briefcase size={18} /> },
@@ -67,6 +69,8 @@ export function Sidebar() {
           {membersOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
         </button>
 
+        
+
         {membersOpen && (
           <div className="ml-6 mt-1 space-y-1 text-sm">
             <NavLink to="/members" className="flex items-center gap-2 hover:text-white">
@@ -77,6 +81,43 @@ export function Sidebar() {
             </NavLink>
           </div>
         )}
+
+        {/* Submenu Relatórios */}
+<button
+  className="flex items-center justify-between w-full text-left hover:text-white"
+  onClick={() => setReportsOpen(!reportsOpen)}
+>
+  <span className="flex items-center gap-2">
+    <BarChart2 size={18} /> Relatórios
+  </span>
+  {reportsOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+</button>
+
+{reportsOpen && (
+  <div className="ml-6 mt-1 space-y-1 text-sm">
+    <NavLink to="/reports" className="flex items-center gap-2 hover:text-white">
+      <BarChart2 size={16}/> Visão Geral
+    </NavLink>
+    <NavLink to="/reports/contributions" className="flex items-center gap-2 hover:text-white">
+      <Coins size={16}/> Contribuições
+    </NavLink>
+    <NavLink to="/reports/payments" className="flex items-center gap-2 hover:text-white">
+      <CreditCard size={16}/> Pagamentos
+    </NavLink>
+    <NavLink to="/reports/members" className="flex items-center gap-2 hover:text-white">
+      <Users size={16}/> Sócios
+    </NavLink>
+    <NavLink to="/reports/clients" className="flex items-center gap-2 hover:text-white">
+      <Briefcase size={16}/> Clientes
+    </NavLink>
+    <NavLink to="/reports/loans" className="flex items-center gap-2 hover:text-white">
+      <FileText size={16}/> Empréstimos
+    </NavLink>
+    <NavLink to="/reports/bank-accounts" className="flex items-center gap-2 hover:text-white">
+      <Landmark size={16}/> Contas Bancárias
+    </NavLink>
+  </div>
+)}
 
         {/* Outros módulos */}
         {mainMenus.map((m) => (

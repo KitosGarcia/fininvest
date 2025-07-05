@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Simulação de Empréstimo</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    .header, .section { margin-bottom: 20px; }
+    .title { font-size: 24px; font-weight: bold; }
+    table { width: 100%; border-collapse: collapse; }
+    td, th { padding: 8px; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="title">Simulação de Empréstimo</div>
+    <% if (company) { %>
+      <p><strong>Empresa:</strong> <%= company.name %></p>
+      <p><strong>NIF:</strong> <%= company.nif %></p>
+      <p><strong>Endereço:</strong> <%= company.address %></p>
+      <p><strong>Email:</strong> <%= company.email %></p>
+      <p><strong>Telefone:</strong> <%= company.phone %></p>
+    <% } %>
+  </div>
+
+  <div class="section">
+    <h3>Dados do Empréstimo</h3>
+    <table>
+      <tr>
+        <td><strong>Cliente:</strong></td>
+        <td><%= loan.client_name %></td>
+      </tr>
+      <tr>
+        <td><strong>Valor Solicitado:</strong></td>
+        <td>€ <%= parseFloat(loan.amount_requested).toFixed(2) %></td>
+      </tr>
+      <tr>
+        <td><strong>Taxa de Juro:</strong></td>
+        <td><%= parseFloat(loan.interest_rate).toFixed(2) %> %</td>
+      </tr>
+      <tr>
+        <td><strong>Prazo:</strong></td>
+        <td><%= loan.repayment_term_months %> meses</td>
+      </tr>
+      <tr>
+        <td><strong>Finalidade:</strong></td>
+        <td><%= loan.loan_purpose %></td>
+      </tr>
+      <tr>
+        <td><strong>Data de Pedido:</strong></td>
+        <td><%= new Date(loan.application_date).toLocaleDateString() %></td>
+      </tr>
+    </table>
+  </div>
+
+  <% if (installments && installments.length > 0) { %>
+    <div class="section">
+      <h3>Prestações</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Valor</th>
+            <th>Data de Vencimento</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% installments.forEach((i, idx) => { %>
+            <tr>
+              <td><%= idx + 1 %></td>
+              <td>€ <%= parseFloat(i.amount).toFixed(2) %></td>
+              <td><%= new Date(i.due_date).toLocaleDateString() %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } else { %>
+    <p><em>Este empréstimo tem pagamento único e não possui prestações.</em></p>
+  <% } %>
+</body>
+</html>

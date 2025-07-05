@@ -66,7 +66,7 @@ const outstanding = Number(contributionAmount) - totalPaid;
             leaveFrom="opacity-100 scale-100"
             leaveTo="opacity-0 scale-95"
           >
-            <Dialog.Panel className="w-full max-w-4xl rounded-lg bg-jarvis.panel/98 p-6 shadow-2xl backdrop-blur">
+            <Dialog.Panel className="w-full max-w-4xl rounded-lg bg-jarvis.panel/100 p-6 shadow-2xl backdrop-blur">
               <Dialog.Title className="text-lg font-semibold text-jarvis.accent mb-4">
                 Pagamentos da Contribuição #{contributionId}
               </Dialog.Title>

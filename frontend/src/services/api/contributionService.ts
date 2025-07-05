@@ -22,32 +22,27 @@ export interface Contribution extends ContributionInput {
 }
 
 export const contributionService = {
-  
   // Buscar todas as contribuições
   getAll: async (): Promise<Contribution[]> => {
     const res = await api.get("/contributions");
     return res.data;
   },
 
-  // Buscar contribuição específica
   getById: async (id: number): Promise<Contribution> => {
     const res = await api.get(`/contributions/${id}`);
     return res.data;
   },
 
-  // Criar nova contribuição
   create: async (data: ContributionInput): Promise<Contribution> => {
     const res = await api.post("/contributions", data);
     return res.data.contribution;
   },
 
-  // Atualizar contribuição (detalhes, não pagamento)
   update: async (id: number, updates: Partial<ContributionInput>): Promise<Contribution> => {
     const res = await api.put(`/contributions/${id}`, updates);
     return res.data.contribution;
   },
 
-  // Confirmação de pagamento (caso use um endpoint separado)
   confirmPayment: async (
     id: number,
     data: {
@@ -63,12 +58,19 @@ export const contributionService = {
     return res.data.contribution;
   },
 
-
-
-  // Remover contribuição
   delete: async (id: number): Promise<{ message: string }> => {
     const res = await api.delete(`/contributions/${id}`);
     return res.data;
+  },
+
+  getStatus: async (memberId: number) => {
+    const res = await api.get(`/contributions/status/${memberId}`);
+    return res.data;
+  },
+
+  generateBulk: async (data: { year: number; tax_amount: number }) => {
+    const response = await api.post("/contributions/generate-bulk", data);
+    return response.data;
   },
 };
 

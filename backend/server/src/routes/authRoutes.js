@@ -10,47 +10,49 @@ require("dotenv").config();
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
-  // Validação básica
   if (!username || !password) {
     return res.status(400).json({ message: "Username e password são obrigatórios." });
   }
 
   try {
-    // Buscar utilizador
     const user = await findByUsername(username);
     if (!user) {
       return res.status(401).json({ message: "Credenciais inválidas." });
     }
 
-    // Validar password
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
     if (!isValidPassword) {
       return res.status(401).json({ message: "Credenciais inválidas." });
     }
 
-    // Buscar permissões com base no role
     const permissions = await getPermissionsForRole(user.role_id);
 
-    // Criar JWT
+    // 🔥 Adiciona role_name para o frontend poder verificar permissões visuais
+    const role_name = user.role_name || "user";
+
     const token = jwt.sign(
       {
         user_id: user.user_id,
         username: user.username,
         role_id: user.role_id,
+        role_name,
         permissions
       },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || "1h" }
     );
 
-    // Remover hash antes de enviar resposta
+    // Remover hash antes de enviar
     const { password_hash, ...safeUser } = user;
 
     res.json({
       message: "Login efetuado com sucesso",
       token,
-      user: safeUser,
-      permissions
+      user: {
+        ...safeUser,
+        role_name,
+        permissions
+      }
     });
 
   } catch (error) {

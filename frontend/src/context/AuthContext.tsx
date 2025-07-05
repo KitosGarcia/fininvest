@@ -53,17 +53,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 const login = async (username: string, password: string) => {
   try {
-    const res = await axios.post("/api/auth/login", { username, password });
-    const { token, user, permissions } = res.data;
+const res = await axios.post("/api/auth/login", { username, password });
+const { token, user } = res.data;
 
-    user.permissions = permissions; 
+localStorage.setItem("auth_token", token);
+localStorage.setItem("user_data", JSON.stringify(user)); // 🔥 aqui já inclui permissions
+axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-    localStorage.setItem("auth_token", token);
-    localStorage.setItem("user_data", JSON.stringify(user));
-    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
-    setUser(user);
-    setToken(token);
+setUser(user);
+setToken(token);
     return true;
   } catch (err) {
     console.error("Erro ao fazer login:", err);

@@ -4,11 +4,12 @@ import { format } from "date-fns";
 import { toast } from "react-hot-toast";
 
 import { Contribution } from "../../services/api/contributionService";
-import { BankAccount, getBankAccounts } from "../../services/api/bankAccountService";
+import { bankAccountService } from '../../services/api/bankAccountService';
 import { getPaymentMethods, PaymentMethod } from "../../services/api/paymentMethodService";
 import { uploadReceipt } from "../../services/api/uploadService";
 import api from "../../services/api";
 import { Input } from "../ui/input";
+import { BankAccount } from '../../services/api/bankAccountService';
 
 interface Props {
   isOpen: boolean;
@@ -41,7 +42,7 @@ const ContributionPaymentModal: React.FC<Props> = ({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    getBankAccounts()
+    bankAccountService.getAll()
       .then(setBankAccounts)
       .catch(() => toast.error("Erro ao buscar contas bancárias"));
 
@@ -114,7 +115,7 @@ const ContributionPaymentModal: React.FC<Props> = ({
   return (
     <Dialog.Root open={isOpen} onOpenChange={onClose}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-50 z-40" />
+        <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-100 z-40" />
         <Dialog.Content className="bg-jarvis.panel p-6 rounded-md w-[900px] max-h-[90vh] overflow-y-auto fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 shadow-lg">
           <h2 className="text-xl font-semibold mb-4 text-jarvis.text">
             Pagamento para: <span className="text-white">{memberName}</span>

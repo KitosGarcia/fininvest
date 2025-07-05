@@ -13,12 +13,13 @@ import BankAccountPage    from "./pages/settings/BankAccountPage";
 import UsersPage          from "./pages/settings/UsersPage";
 import MembersPage        from "./components/members/MembersPage";
 import ClientsPage        from "./components/clients/ClientsPage";
-import LoansPage          from "./components/loans/LoansPage";
+import LoansPage          from './components/loans/LoansPage';
 import ContributionsPage  from "./components/contributions/ContributionsPage";
 import PaymentsPage       from "./components/payments/PaymentsPage";
 import LedgerPage         from "./components/ledger/LedgerPage";
 import TransfersPage      from "./components/transfers/TransfersPage";
 import TiersPage from "./pages/TiersPage"
+import ContributionReportPage from './components/reports/ContributionReportPage';
 
 
 
@@ -57,8 +58,15 @@ export default function App() {
           <Route path="/ledger"        element={<PrivateRoute><LedgerPage /></PrivateRoute>} />
           <Route path="/transfers"     element={<PrivateRoute><TransfersPage /></PrivateRoute>} />
           <Route path="/members/tiers" element={<PrivateRoute><TiersPage /></PrivateRoute>} />
+    
+    {/* ✅ NOVA ROTA DE RELATÓRIO */}
+  <Route path="/reports/contributions" element={<PrivateRoute><ContributionReportPage /></PrivateRoute>} />
+</Route>
 
-        </Route>
+
+          
+
+       
 
         {/* fallback */}
         <Route path="*" element={<Navigate to="/login" replace />} />

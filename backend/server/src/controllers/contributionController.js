@@ -1,6 +1,9 @@
 const Contribution = require("../models/contributionModel");
 const { authorizePermission } = require("../middleware/authMiddleware");
 const db = require('../db/db');
+const { calculateDueDate } = require("../utils/dateUtils");
+const { createAlert } = require("../utils/alertUtils");
+
 
 
 
@@ -176,11 +179,88 @@ const getStatusByMember = async (req, res) => {
 };
 
 
+
+const generateBulkContributions = async (req, res) => {
+  const { year, tax_amount } = req.body;
+
+  if (!year || !tax_amount || isNaN(tax_amount)) {
+    return res.status(400).json({ message: "Ano e taxa são obrigatórios." });
+  }
+
+  try {
+    const members = await db.raw("SELECT member_id FROM members WHERE status = 'ativo'");
+    if (members.rows.length === 0) {
+      return res.status(404).json({ message: "Nenhum sócio ativo encontrado." });
+    }
+
+    for (let month = 1; month <= 12; month++) {
+      const reference_month = `${year}-${String(month).padStart(2, "0")}-01`; // ✅ Agora é um DATE válido
+      const due_date = calculateDueDate(reference_month);
+
+      for (const member of members.rows) {
+        const { member_id } = member;
+
+        // Obter quota do escalão
+        const tier = await db.raw(`
+          SELECT quota_amount FROM member_tiers 
+          WHERE member_id = ? AND start_date <= ? AND (end_date IS NULL OR end_date >= ?)
+          ORDER BY start_date DESC LIMIT 1
+        `, [member_id, reference_month, reference_month]);
+
+if (tier.rows.length === 0) {
+  await createAlert({
+    type: 'contribuicao',
+    category: 'bulk_generation',
+    message: `Sócio ${member_id} sem escalão válido em ${reference_month}`,
+    member_id,
+    related_id: null,
+    description: `Contribuição não gerada para o sócio ${member_id} porque não possui escalão ativo em ${reference_month}.`
+  });
+  continue;
+}
+
+const quota_amount = parseFloat(tier.rows[0].quota_amount);
+
+        // Verificar se já existe contribuição para este mês
+        const existing = await db.raw(`
+          SELECT 1 FROM contributions 
+          WHERE member_id = ? AND reference_month = ? AND is_active = true
+        `, [member_id, reference_month]);
+
+        if (existing.rows.length > 0) continue;
+
+        // Criar contribuição de quota
+        await db.raw(`
+          INSERT INTO contributions 
+            (member_id, reference_month, type, amount_due, due_date, status, is_active, created_at)
+          VALUES 
+            (?, ?, 'quota', ?, ?, 'por_pagar', true, NOW())
+        `, [member_id, reference_month, quota_amount, due_date]);
+
+        // Criar contribuição de taxa
+        await db.raw(`
+          INSERT INTO contributions 
+            (member_id, reference_month, type, amount_due, due_date, status, is_active, created_at)
+          VALUES 
+            (?, ?, 'taxa', ?, ?, 'por_pagar', true, NOW())
+        `, [member_id, reference_month, tax_amount, due_date]);
+      }
+    }
+
+    res.status(200).json({ message: "Contribuições geradas com sucesso." });
+  } catch (err) {
+    console.error("Erro ao gerar contribuições:", err);
+    res.status(500).json({ message: "Erro interno ao gerar contribuições." });
+  }
+};
+
+
 module.exports = {
   getAllContributions,
   getContributionById,
   createContribution,
   updateContribution,
   deleteContribution,
-  getStatusByMember
+  getStatusByMember,
+  generateBulkContributions
 };

@@ -55,21 +55,26 @@ const TierFormModal: React.FC<TierFormModalProps> = ({ isOpen, onClose, onSave, 
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async () => {
-    try {
-      if (editData) {
-        await axios.put(`/api/tiers/${editData.tier_id}`, form);
-        toast.success('Escalão atualizado com sucesso.');
-      } else {
-        await axios.post('/api/tiers', form);
-        toast.success('Escalão criado com sucesso.');
-      }
-      onSave();
-      onClose();
-    } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Erro ao salvar escalão.');
+const handleSubmit = async () => {
+  if (!form.quota_amount || parseFloat(form.quota_amount) <= 0) {
+    toast.error("O valor da quota deve ser maior que zero.");
+    return;
+  }
+
+  try {
+    if (editData) {
+      await axios.put(`/api/tiers/${editData.tier_id}`, form);
+      toast.success('Escalão atualizado com sucesso.');
+    } else {
+      await axios.post('/api/tiers', form);
+      toast.success('Escalão criado com sucesso.');
     }
-  };
+    onSave();
+    onClose();
+  } catch (err: any) {
+    toast.error(err?.response?.data?.message || 'Erro ao salvar escalão.');
+  }
+};
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

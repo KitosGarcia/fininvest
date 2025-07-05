@@ -1,9 +1,10 @@
-// src/components/members/MembersPage.tsx
 import { useEffect, useState } from "react";
 import { memberService } from "../../services/api/memberService";
 import MemberFormModal from "./MemberFormModal";
 import MemberViewModal from "./MemberViewModal";
 import { clientService } from "../../services/api/clientService";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 
 interface Member {
   member_id: number;
@@ -57,17 +58,17 @@ export default function MembersPage() {
   };
 
   const openEditMember = async (member: Member) => {
-  const client = await clientService.getByMemberId(member.member_id);
-  setFormMode("edit");
-  setSelectedMember({ ...member, ...client });
-  setModalOpen(true);
-};
+    const client = await clientService.getByMemberId(member.member_id);
+    setFormMode("edit");
+    setSelectedMember({ ...member, ...client });
+    setModalOpen(true);
+  };
 
-const openViewMember = async (member: Member) => {
-  const client = await clientService.getByMemberId(member.member_id);
-  setViewMember({ ...member, ...client });
-  setViewModalOpen(true);
-};
+  const openViewMember = async (member: Member) => {
+    const client = await clientService.getByMemberId(member.member_id);
+    setViewMember({ ...member, ...client });
+    setViewModalOpen(true);
+  };
 
   const closeModal = () => {
     setModalOpen(false);
@@ -93,83 +94,56 @@ const openViewMember = async (member: Member) => {
   });
 
   return (
-    <div className="text-white p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Sócios</h2>
-        <div className="flex items-center space-x-4">
-          <button onClick={openNewMember} className="bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded">
-            Novo Sócio
-          </button>
+    <div className="p-4 space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-bold text-jarvis.text">Sócios</h2>
+        <div className="flex items-center gap-4">
+          <Button onClick={openNewMember}>Novo Sócio</Button>
           {Object.values(filters).some(v => v !== "") && (
-            <button
-              onClick={clearAllFilters}
-              className="text-sm text-red-400 hover:text-red-600"
-            >
-              Limpar filtros ✕
-            </button>
+            <Button variant="ghost" onClick={clearAllFilters}>Limpar filtros ✕</Button>
           )}
         </div>
       </div>
 
-      <table className="w-full text-sm border border-blue-800 bg-blue-950 rounded shadow">
-        <thead className="bg-blue-900">
+      <div className="grid grid-cols-5 gap-4">
+        {Object.keys(filters).map((field) => (
+          <Input
+            key={field}
+            name={field}
+            placeholder={`Filtrar por ${field}`}
+            value={filters[field as keyof typeof filters]}
+            onChange={(e) => updateFilter(field as keyof typeof filters, e.target.value)}
+          />
+        ))}
+      </div>
+
+      <table className="w-full text-sm text-left mt-4">
+        <thead className="border-b border-jarvis.panel">
           <tr>
-            <th className="p-2 text-left">Nome</th>
-            <th className="p-2 text-left">Doc.ID</th>
-            <th className="p-2 text-left">Email</th>
-            <th className="p-2 text-left">Telefone</th>
-            <th className="p-2 text-center">Estado</th>
+            <th className="p-2">Nome</th>
+            <th className="p-2">Doc.ID</th>
+            <th className="p-2">Email</th>
+            <th className="p-2">Telefone</th>
+            <th className="p-2">Estado</th>
             <th className="p-2 text-center">Ações</th>
           </tr>
-          <tr className="bg-blue-950">
-            {["name", "document_id", "email", "phone", "status"].map((field) => (
-              <th key={field} className="p-1">
-                <div className="flex items-center">
-                  <input
-                    type="text"
-                    placeholder="Filtrar"
-                    value={filters[field as keyof typeof filters]}
-                    onChange={(e) => updateFilter(field as keyof typeof filters, e.target.value)}
-                    className="w-full text-xs bg-blue-800 text-white p-1 rounded"
-                  />
-                  {filters[field as keyof typeof filters] && (
-                    <button
-                      onClick={() => updateFilter(field as keyof typeof filters, "")}
-                      className="ml-1 text-red-400 hover:text-red-600 text-sm"
-                      title="Limpar filtro"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-              </th>
-            ))}
-            <th></th>
-          </tr>
         </thead>
-
         <tbody>
           {filteredMembers.length === 0 ? (
             <tr>
-              <td colSpan={6} className="p-4 text-center text-blue-300">
-                Nenhum sócio encontrado.
-              </td>
+              <td colSpan={6} className="p-4 text-center text-jarvis.text">Nenhum sócio encontrado.</td>
             </tr>
           ) : (
             filteredMembers.map((m) => (
-              <tr key={m.member_id} className="border-t border-blue-800">
+              <tr key={m.member_id} className="border-b border-jarvis.panel hover:bg-jarvis.bg/30">
                 <td className="p-2">{m.name}</td>
                 <td className="p-2">{m.document_id}</td>
                 <td className="p-2">{m.email || "—"}</td>
                 <td className="p-2">{m.phone || "—"}</td>
-                <td className="p-2 text-center">{m.status}</td>
+                <td className="p-2">{m.status}</td>
                 <td className="p-2 text-center space-x-2">
-                  <button onClick={() => openEditMember(m)} className="text-blue-400 hover:text-blue-600">
-                    Editar
-                  </button>
-                  <button onClick={() => openViewMember(m)} className="text-blue-400 hover:text-blue-600">
-                    👁 Ver
-                  </button>
+                  <Button size="sm" variant="ghost" onClick={() => openEditMember(m)}>Editar</Button>
+                  <Button size="sm" variant="ghost" onClick={() => openViewMember(m)}>👁 Ver</Button>
                 </td>
               </tr>
             ))

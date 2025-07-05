@@ -6,7 +6,8 @@ const {
   createContribution,
   updateContribution,
   deleteContribution,
-  getStatusByMember
+  getStatusByMember,
+  generateBulkContributions
  
 } = require("../controllers/contributionController");
 const contributionPaymentController = require("../controllers/contributionPaymentController");
@@ -23,6 +24,9 @@ router.get("/:id", authorizePermission("contributions", "view"), getContribution
 router.post("/", authorizePermission("contributions", "create"), createContribution);
 router.put("/:id", authorizePermission("contributions", "update"), updateContribution);
 router.delete("/:id", authorizePermission("contributions", "delete"), deleteContribution);
+router.post('/generate-bulk', authorizePermission("contributions", "create"),generateBulkContributions);
+
+
 
 // ✅ Correto agora:
 router.get("/status/:memberId", authorizePermission("contributions", "view"), getStatusByMember);

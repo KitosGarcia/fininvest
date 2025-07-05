@@ -1,3 +1,4 @@
+// src/services/api/bankAccountService.ts
 import api from "../api";
 
 export interface BankAccount {
@@ -11,7 +12,13 @@ export interface BankAccount {
   is_active: boolean;
 }
 
-export const getBankAccounts = async (): Promise<BankAccount[]> => {
+const getAll = async (): Promise<BankAccount[]> => {
   const response = await api.get("/bank-accounts");
   return response.data;
 };
+
+export const bankAccountService = {
+  getAll,
+};
+
+export default bankAccountService;

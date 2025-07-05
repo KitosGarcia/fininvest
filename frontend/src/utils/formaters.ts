@@ -1,5 +1,5 @@
 // src/utils/formatters.ts
-export function formatCurrency(value: number, locale = 'pt-PT', currency = 'EUR'): string {
+export function formatCurrency(value: number, locale = 'pt-PT', currency = 'AOA'): string {
   return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,

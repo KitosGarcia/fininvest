@@ -60,7 +60,7 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-950 to-blue-900 p-4 relative overflow-hidden">
+    <div className="h-screen flex items-center justify-center bg-gradient-to-b from-blue-950 to-blue-900 p-4 relative overflow-hidden">
       {/* Efeito de luz lateral */}
       <div className="absolute right-0 top-1/4 w-20 h-96 bg-blue-400/30 blur-3xl rounded-full"></div>
       <div className="absolute left-0 bottom-1/4 w-20 h-96 bg-blue-400/20 blur-3xl rounded-full"></div>
