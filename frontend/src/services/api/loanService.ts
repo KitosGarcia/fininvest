@@ -39,10 +39,7 @@ export interface Installment {
 /* ---------- Serviço completo ---------- */
 
 export const loanService = {
-  getAll: async (): Promise<Loan[]> => {
-    const res = await api.get('/loans');
-    return res.data;
-  },
+  getAll: (query = '') => api.get(`/loans${query ? `?${query}` : ''}`).then(res => res.data),
 
   create: async (data: LoanInput): Promise<{ loan_id: number }> => {
     const res = await api.post('/loans', data);
@@ -55,11 +52,19 @@ export const loanService = {
       status,
     }),
 
-
-  disburse: async (loanId: number, payload: { disbursement_date: string; disbursement_account: number }) => {
-    const res = await api.put(`/loans/${loanId}/disburse`, payload);
-    return res.data;
-  },
+  disburse: async (
+  loanId: number,
+  payload: {
+    disbursement_date: string;
+    amount_disbursed: number;
+    bank_account_id: number;
+    signed_contract_url?: string;
+    user_id: number;
+  }
+) => {
+  const res = await api.put(`/loans/${loanId}/disburse`, payload); // ✅ PUT
+  return res.data;
+},
 
   getById: async (loanId: number): Promise<Loan> => {
     const res = await api.get(`/loans/${loanId}`);

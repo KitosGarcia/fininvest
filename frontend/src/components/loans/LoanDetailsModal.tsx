@@ -13,8 +13,8 @@ import { formatCurrency } from '../../utils/formaters';
 import { generateLoanSimulationPdf } from '../../services/pdf/generateLoanSimulation';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
-
-
+import LoanDisbursementModal from './LoanDisbursementModal';
+import { bankAccountService } from '../../services/api/bankAccountService';
 
 interface LoanDetailsModalProps {
   loanId: number;
@@ -35,6 +35,7 @@ interface Loan {
   approval_date: string | null;
   disbursement_date: string | null;
   status: string;
+  amount_approved: number;
 }
 
 export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({
@@ -43,10 +44,12 @@ export const LoanDetailsModal: React.FC<LoanDetailsModalProps> = ({
   onClose
 }) => {
   const [loan, setLoan] = useState<Loan | null>(null);
+  const [disburseModalOpen, setDisburseModalOpen] = useState(false);
+  const [bankAccounts, setBankAccounts] = useState([]);
   const printRef = useRef<HTMLDivElement>(null);
 
   const { user, hasPermission } = useAuth();
-const canApprove = hasPermission('loan_approval', 'update');
+  const canApprove = hasPermission('loan_approval', 'update');
 
   useEffect(() => {
     if (open && loanId) {
@@ -54,25 +57,67 @@ const canApprove = hasPermission('loan_approval', 'update');
     }
   }, [open, loanId]);
 
-const handleDecision = async (status: 'aprovado' | 'rejeitado') => {
-  if (!user || !canApprove) return;
+  const handleDecision = async (status: 'aprovado' | 'rejeitado') => {
+    if (!user || !canApprove || !loan) return;
+    try {
+      await loanService.approveLoan(loan.loan_id, user.user_id, status);
+      toast.success(`Empréstimo ${status === 'aprovado' ? 'aprovado' : 'rejeitado'} com sucesso.`);
+      const updatedLoan = await loanService.getById(loan.loan_id);
+      setLoan(updatedLoan);
+    } catch (err) {
+      console.error(err);
+      toast.error(`Erro ao ${status === 'aprovado' ? 'aprovar' : 'rejeitar'} empréstimo.`);
+    }
+  };
+
+  const handleGenerateContractPdf = () => {
+    if (loan) {
+      window.open(`/api/loans/${loan.loan_id}/contract-pdf`, "_blank");
+    }
+  };
+
+const fetchBankAccounts = async () => {
   try {
-    await loanService.approveLoan(loan!.loan_id, user.user_id, status);
-    toast.success(`Empréstimo ${status === 'aprovado' ? 'aprovado' : 'rejeitado'} com sucesso.`);
-
-    // 🔁 Recarrega dados atualizados
-    const updatedLoan = await loanService.getById(loan!.loan_id);
-    setLoan(updatedLoan);
-
-  } catch (err) {
-    console.error(err);
-    toast.error(`Erro ao ${status === 'aprovado' ? 'aprovar' : 'rejeitar'} empréstimo.`);
+    const data = await bankAccountService.getAll();
+    console.log("🔁 Contas bancárias carregadas:", data);
+    setBankAccounts(data);
+  } catch (error) {
+    console.error('Erro ao buscar contas bancárias:', error);
+    toast.error('Erro ao buscar contas bancárias');
   }
 };
 
+  const openDisbursementModal = async () => {
+    await fetchBankAccounts();
+    setDisburseModalOpen(true);
+  };
+
+  const renderApprovalButtons = () => (
+    <>
+      <Button onClick={() => handleDecision('aprovado')}>
+        Aprovar
+      </Button>
+      <Button variant="destructive" onClick={() => handleDecision('rejeitado')}>
+        Rejeitar
+      </Button>
+    </>
+  );
+
+  const renderDisbursementButtons = () => (
+    <>
+      <Button onClick={handleGenerateContractPdf}>
+        Gerar Contrato em PDF
+      </Button>
+      {!loan?.disbursement_date && (
+        <Button onClick={openDisbursementModal}>
+          Desembolsar
+        </Button>
+      )}
+    </>
+  );
+
   if (!loan || !user) return null;
-console.log("Usuário logado:", user);
-console.log("Permissão loan_approval/update:", canApprove);
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl h-[90vh] overflow-y-auto">
@@ -80,7 +125,6 @@ console.log("Permissão loan_approval/update:", canApprove);
           <DialogTitle>Detalhes do Empréstimo #{loan.loan_id}</DialogTitle>
         </DialogHeader>
 
-        {/* Conteúdo visível e imprimível */}
         <div ref={printRef}>
           <div className="grid grid-cols-2 gap-4 mt-4 text-sm text-jarvis-text">
             <div><strong>Cliente:</strong> {loan.client_name} (<strong>ID:</strong> {loan.client_id})</div>
@@ -97,37 +141,34 @@ console.log("Permissão loan_approval/update:", canApprove);
           </div>
         </div>
 
-        {/* Tabela de Prestações */}
         <LoanInstallmentTable loan={loan} />
 
-      
-
-
-        {/* Botões */}
         <div className="flex justify-end mt-6 gap-3">
-        <Button variant="outline" onClick={onClose}>Fechar</Button>
+          <Button variant="outline" onClick={onClose}>Fechar</Button>
 
           {canApprove && loan.status === 'pendente' && (
-        
-          <Button onClick={() => generateLoanSimulationPdf(loan.loan_id)}>
-            Gerar PDF da Simulação
-          </Button>)}
+            <>
+              <Button onClick={() => generateLoanSimulationPdf(loan.loan_id)}>
+                Gerar PDF da Simulação
+              </Button>
+              {renderApprovalButtons()}
+            </>
+          )}
 
-         {canApprove && loan.status === 'pendente' && (
-  <>
-    <Button onClick={() => handleDecision('aprovado')}>
-      Aprovar
-    </Button>
-    <Button
-      variant="destructive"
-      onClick={() => handleDecision('rejeitado')}
-    >
-      Rejeitar
-    </Button>
-  </>
-)}
+          {loan.status === 'aprovado' && renderDisbursementButtons()}
         </div>
       </DialogContent>
+
+      <LoanDisbursementModal
+        open={disburseModalOpen}
+        onClose={() => {
+          setDisburseModalOpen(false);
+          loanService.getById(loanId).then(setLoan);
+        }}
+        loan={loan}
+        bankAccounts={bankAccounts}
+        currentUser={user}
+      />
     </Dialog>
   );
 };

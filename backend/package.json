@@ -2,6 +2,7 @@
   "dependencies": {
     "bcrypt": "^6.0.0",
     "ejs": "^3.1.10",
-    "puppeteer": "^24.11.2"
+    "puppeteer": "^24.11.2",
+    "uuid": "^11.1.0"
   }
 }

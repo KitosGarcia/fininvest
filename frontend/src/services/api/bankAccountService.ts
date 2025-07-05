@@ -12,8 +12,9 @@ export interface BankAccount {
   is_active: boolean;
 }
 
+// src/services/api/bankAccountService.ts
 const getAll = async (): Promise<BankAccount[]> => {
-  const response = await api.get("/bank-accounts");
+  const response = await api.get("/bank-accounts"); // ✅ Correto
   return response.data;
 };
 

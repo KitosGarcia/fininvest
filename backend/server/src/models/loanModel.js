@@ -1,37 +1,57 @@
 const db = require("../config/db");
 
+
 const Loan = {
   // Find all loans
-  findAll: async (filters = {}) => {
-    let query = "SELECT l.*, c.name as client_name FROM loans l JOIN clients c ON l.client_id = c.client_id";
-    const conditions = [];
-    const values = [];
-    let valueIndex = 1;
+findAll: async (filters = {}) => {
+  let query = `
+    SELECT l.*, c.name as client_name 
+    FROM loans l 
+    JOIN clients c ON l.client_id = c.client_id
+  `;
+  const conditions = [];
+  const values = [];
+  let valueIndex = 1;
 
-    if (filters.status) {
-      conditions.push(`l.status = $${valueIndex++}`);
-      values.push(filters.status);
-    }
-    if (filters.clientId) {
-      conditions.push(`l.client_id = $${valueIndex++}`);
-      values.push(filters.clientId);
-    }
-    // Add more filters as needed (date range, etc.)
+  if (filters.loanId) {
+    conditions.push(`l.loan_id = $${valueIndex++}`);
+    values.push(filters.loanId);
+  }
+  if (filters.clientName) {
+    conditions.push(`LOWER(c.name) ILIKE $${valueIndex++}`);
+    values.push(`%${filters.clientName.toLowerCase()}%`);
+  }
+  if (filters.status) {
+    conditions.push(`l.status = $${valueIndex++}`);
+    values.push(filters.status);
+  }
+  if (filters.startDate) {
+    conditions.push(`l.application_date >= $${valueIndex++}`);
+    values.push(filters.startDate);
+  }
+  if (filters.endDate) {
+    conditions.push(`l.application_date <= $${valueIndex++}`);
+    values.push(filters.endDate);
+  }
 
-    if (conditions.length > 0) {
-      query += " WHERE " + conditions.join(" AND ");
-    }
+  // ⚠️ Aqui estava o erro: só adiciona WHERE se houver condições
+  if (conditions.length > 0) {
+    query += " WHERE " + conditions.join(" AND ");
+  }
 
-    query += " ORDER BY l.application_date DESC, l.created_at DESC"; // Changed loan_date to application_date
+  query += ' ORDER BY l.application_date DESC, l.created_at DESC';
 
-    try {
-      const { rows } = await db.query(query, values);
-      return rows;
-    } catch (error) {
-      console.error("Error finding all loans:", error);
-      throw error;
-    }
-  },
+  try {
+    const { rows } = values.length > 0 
+      ? await db.query(query, values) 
+      : await db.query(query); // 🚨 este era o ponto do erro
+    return rows;
+  } catch (error) {
+    console.error("Error finding all loans:", error);
+    throw error;
+  }
+},
+
 
   // Find a loan by ID
   findById: async (id) => {

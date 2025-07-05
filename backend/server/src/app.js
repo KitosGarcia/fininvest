@@ -22,6 +22,7 @@ app.use(express.urlencoded({ extended: true }));
 const authRoutes = require("./routes/authRoutes");
 const memberRoutes = require("./routes/memberRoutes");
 const clientRoutes = require("./routes/clientRoutes");
+const loanRoutes = require("./routes/loanRoutes");
 const contributionRoutes = require("./routes/contributionRoutes");
 const loanPaymentRoutes = require("./routes/loanPaymentRoutes");
 const fundTransactionRoutes = require("./routes/fundTransactionRoutes");
@@ -36,7 +37,7 @@ const userRoutes = require("./routes/userRoutes");
 const contributionPaymentRoutes = require("./routes/contributionPaymentRoutes");
 const paymentMethodRoutes = require("./routes/paymentMethodRoutes");
 const tierRoutes = require('./routes/tierRoutes');
-const loanRoutes = require('./routes/loanRoutes');
+
 
 const alertRoutes = require('./routes/alertRoutes');
 
@@ -53,7 +54,6 @@ app.use("/api/loans", loanRoutes);
 app.use("/api/contributions", contributionRoutes);
 app.use("/api/payments", loanPaymentRoutes);
 app.use("/api/transactions", fundTransactionRoutes);
-app.use("/api/accounts", bankAccountRoutes);
 app.use("/api/transfers", internalTransferRoutes);
 app.use("/api/automation", automationRoutes);
 app.use("/api/dashboard", dashboardRoutes);

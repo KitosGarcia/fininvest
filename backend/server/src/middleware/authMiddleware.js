@@ -39,6 +39,7 @@ function authorizeRole(requiredRoleId) {
 /* --- Autorização baseada em permissões CRUD --- */
 function authorizePermission(module, action) {
   return (req, res, next) => {
+    
     const user = req.user;
     if (!user || !user.permissions) {
       return res.status(403).json({ message: "Permissões não encontradas." });

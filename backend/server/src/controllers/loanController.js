@@ -1,7 +1,12 @@
-const db = require('../config/db');
+const db = require('../config/db')
+const pool = db.pool;
 const { createInstallments, getInstallmentsByLoanId } = require('../models/loanInstallmentModel');
 const loanSimulationService = require('../services/loanSimulationService');
-const generateLoanSimulationPdf = loanSimulationService.generateLoanSimulationPdf;
+const generateLoanSimulationPdf = require('../services/loanContractService');
+const { generateLoanContractPdf } = require('../services/loanContractService');
+const Loan = require('../models/loanModel');
+const { v4: uuidv4 } = require('uuid');
+
 
 const createLoan = async (req, res) => {
   try {
@@ -106,27 +111,6 @@ const rejectLoan = async (req, res) => {
   }
 };
 
-const disburseLoan = async (req, res) => {
-  try {
-    const { loanId } = req.params;
-    const { disbursement_date, disbursement_account } = req.body;
-
-    await db.query(
-      `UPDATE loans SET
-        status = 'desembolsado',
-        disbursement_date = $1,
-        disbursement_account = $2,
-        updated_at = NOW()
-      WHERE loan_id = $3`,
-      [disbursement_date || new Date(), disbursement_account, loanId]
-    );
-
-    res.sendStatus(200);
-  } catch (error) {
-    console.error('Erro ao registar desembolso:', error);
-    res.status(500).json({ error: 'Erro ao registar desembolso' });
-  }
-};
 
 const getLoanDetails = async (req, res) => {
   try {
@@ -156,13 +140,23 @@ const getInstallments = async (req, res) => {
 
 const getAllLoans = async (req, res) => {
   try {
-    const result = await db.query('SELECT l.*, c.name AS client_name FROM loans l JOIN clients c ON l.client_id = c.client_id ORDER BY l.created_at DESC');
-    res.json(result.rows);
+    const filters = {
+      loanId: req.query.loanId,
+      clientName: req.query.clientName,
+      status: req.query.status,
+      startDate: req.query.startDate,
+      endDate: req.query.endDate,
+    };
+
+    const loans = await Loan.findAll(filters);
+    res.json(loans);
   } catch (error) {
     console.error('Erro ao buscar empréstimos:', error);
     res.status(500).json({ message: 'Erro interno do servidor' });
   }
 };
+
+
 
 const getLoanPdf = async (req, res) => {
   try {
@@ -195,15 +189,131 @@ const getLoanPdf = async (req, res) => {
   }
 };
 
+const getLoanContractPdf = async (req, res) => {
+  const { loanId } = req.params;
+  const loan = await Loan.findById(loanId);
+  const company = await db.query('SELECT * FROM company_profile LIMIT 1');
+  const pdfBuffer = await generateLoanContractPdf({ loan, company });
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `inline; filename=contrato_emprestimo_${loanId}.pdf`);
+  res.send(pdfBuffer);
+};
+
+
+const disburseLoan = async (req, res) => {
+  const loanId = parseInt(req.params.loanId);
+  const {
+    disbursement_date,
+    amount_disbursed,
+    bank_account_id,
+    signed_contract_url,
+    user_id
+  } = req.body;
+
+  try {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      await client.query(`
+        UPDATE loans
+        SET disbursement_date = $1,
+            status = 'desembolsado',
+            signed_contract_url = $2
+        WHERE loan_id = $3
+      `, [disbursement_date, signed_contract_url || null, loanId]);
+
+      const result = await client.query(`
+        SELECT repayment_plan_type, repayment_term_months, amount_approved
+        FROM loans
+        WHERE loan_id = $1
+      `, [loanId]);
+
+      const loan = result.rows[0];
+      if (!loan) throw new Error("Empréstimo não encontrado");
+
+      if (loan.repayment_plan_type === 'parcelado') {
+        const firstDueDate = new Date(disbursement_date);
+        firstDueDate.setDate(firstDueDate.getDate() + 30);
+
+        await client.query(`
+  UPDATE loan_installments
+  SET due_date = $1
+  WHERE installment_id = (
+    SELECT installment_id
+    FROM loan_installments
+    WHERE loan_id = $2
+    ORDER BY installment_id ASC
+    LIMIT 1
+  )
+`, [firstDueDate.toISOString().split('T')[0], loanId]);
+
+      } else {
+        const dueDate = new Date(disbursement_date);
+        dueDate.setMonth(dueDate.getMonth() + loan.repayment_term_months);
+
+        await client.query(`
+          INSERT INTO loan_installments (loan_id, due_date, amount, status, paid_amount)
+          VALUES ($1, $2, $3, 'pendente', 0)
+        `, [loanId, dueDate.toLocaleDateString('sv-SE'), loan.amount_approved]);
+      }
+
+         // ✅ Insert direto na tabela fund_transactions
+      await client.query(
+        `
+        INSERT INTO fund_transactions (
+          transaction_type, amount, transaction_date, description,
+          related_entity_id, bank_account_id, recorded_by_user_id
+        )
+        VALUES ('desembolso', $1, $2, $3, $4, $5, $6)
+      `,
+        [
+          amount_disbursed,
+          disbursement_date,
+          `Desembolso do empréstimo #${loanId}`,
+          loanId,
+          bank_account_id,
+          user_id,
+        ]
+      );
+
+      // Atualiza o saldo do banco
+      await client.query(
+        `
+        UPDATE bank_accounts
+        SET current_balance = current_balance - $1
+        WHERE account_id = $2
+      `,
+        [amount_disbursed, bank_account_id]
+      );
+
+      await client.query('COMMIT');
+      res.status(200).json({ message: 'Desembolso realizado com sucesso.' });
+
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error("Erro no desembolso:", error);
+      res.status(500).json({ message: 'Erro ao realizar o desembolso', error: error.message });
+    } finally {
+      client.release();
+    }
+
+  } catch (error) {
+    console.error("Erro ao conectar ao banco:", error);
+    res.status(500).json({ message: 'Erro interno ao conectar ao banco', error: error.message });
+  }
+};
 
 
 module.exports = {
   createLoan,
   approveLoan,
   rejectLoan,
-  disburseLoan,
   getLoanDetails,
   getInstallments,
   getAllLoans, // agora funciona
   getLoanPdf,
+  getLoanContractPdf,
+  disburseLoan,
 };

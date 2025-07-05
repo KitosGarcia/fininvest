@@ -34,34 +34,45 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
 
-  useEffect(() => {
-    const storedToken = localStorage.getItem("auth_token");
-    const storedUser = localStorage.getItem("user_data");
+useEffect(() => {
+  const oldToken = localStorage.getItem("auth_token");
+  if (oldToken && oldToken.startsWith("[")) {
+    localStorage.removeItem("auth_token");
+  }
 
-    if (storedToken && storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
-        setToken(storedToken);
-        axios.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`; // 🔧 restaura headers
-      } catch (error) {
-        console.warn("Erro ao recuperar utilizador do localStorage:", error);
-        localStorage.removeItem("user_data");
-      }
+  const storedToken = localStorage.getItem("auth_token");
+  const storedUser = localStorage.getItem("user_data");
+
+  if (storedToken && storedUser) {
+    try {
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      setToken(storedToken);
+      axios.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
+    } catch (error) {
+      console.warn("Erro ao recuperar utilizador do localStorage:", error);
+      localStorage.removeItem("user_data");
     }
-  }, []);
+  }
+}, []);
 
 const login = async (username: string, password: string) => {
   try {
-const res = await axios.post("/api/auth/login", { username, password });
-const { token, user } = res.data;
+    // ✅ Limpa qualquer token antigo mal formatado
+    localStorage.removeItem("auth_token");
 
-localStorage.setItem("auth_token", token);
-localStorage.setItem("user_data", JSON.stringify(user)); // 🔥 aqui já inclui permissions
-axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    const res = await axios.post("/api/auth/login", { username, password });
+    const { token, user } = res.data;
 
-setUser(user);
-setToken(token);
+
+
+    localStorage.setItem("auth_token", token); // ✅ salva como string
+    localStorage.setItem("user_data", JSON.stringify(user));
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+ 
+    setUser(user);
+    setToken(token);
     return true;
   } catch (err) {
     console.error("Erro ao fazer login:", err);

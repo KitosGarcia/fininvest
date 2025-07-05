@@ -2,11 +2,13 @@ const BankAccount = require("../models/bankAccountModel");
 
 // GET all bank accounts
 exports.getAll = async (req, res) => {
+   console.log("🧠 Usuário autenticado:", req.user); // 👈 Log útil
   const includeInactive = req.query.includeInactive === "true";
   try {
     const accounts = await BankAccount.findAll(includeInactive);
     res.json(accounts);
   } catch (error) {
+    console.error("❌ Erro ao buscar contas bancárias:", error); // 👈 Log de erro
     res.status(500).json({ message: "Erro ao buscar contas bancárias", error: error.message });
   }
 };

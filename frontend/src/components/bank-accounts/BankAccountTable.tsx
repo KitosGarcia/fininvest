@@ -21,7 +21,7 @@ export default function BankAccountTable() {
 
   const fetchAccounts = async () => {
     try {
-      const response = await axios.get("/accounts");
+      const response = await axios.get("/bank-accounts");
       setAccounts(response.data);
     } catch (err) {
       console.error("Erro ao buscar contas bancárias:", err);
@@ -46,7 +46,7 @@ export default function BankAccountTable() {
     if (!confirm("Tem certeza que deseja inativar esta conta?")) return;
 
     try {
-      await axios.delete(`/accounts/${id}`);
+      await axios.delete(`/bank-accounts/${id}`);
       fetchAccounts();
     } catch (err) {
       console.error("Erro ao inativar conta:", err);
