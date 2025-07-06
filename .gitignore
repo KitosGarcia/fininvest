@@ -66,3 +66,7 @@ backend/server/dist/
 # Frontend
 frontend/node_modules/
 
+node_modules/
+.local-chromium/
+*.log
+
