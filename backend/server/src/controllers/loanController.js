@@ -255,7 +255,7 @@ const disburseLoan = async (req, res) => {
 
         await client.query(`
           INSERT INTO loan_installments (loan_id, due_date, amount, status, paid_amount)
-          VALUES ($1, $2, $3, 'pendente', 0)
+          VALUES ($1, $2, $3, 'por_pagar', 0)
         `, [loanId, dueDate.toLocaleDateString('sv-SE'), loan.amount_approved]);
       }
 
